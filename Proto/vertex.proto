@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package generated;
+
+option optimize_for = LITE_RUNTIME;
+option cc_enable_arenas = true;
+
+message vertex_3d {
+	float x = 1;
+	float y = 2;
+	float z = 3;
+}
+
+message vertex_3d_ui {
+	uint32 x = 1;
+	uint32 y = 2;
+	uint32 z = 3;
+}
+
+message quaternion {
+	float x = 1;
+	float y = 2;
+	float z = 3;
+	float w = 4;
+}
+
+message size_3d {
+	float x = 1;
+	float y = 2;
+	float z = 3;
+}
+
+message vertex_4d {
+	vertex_3d v3D = 1;
+	float w = 2;
+}
+
+message color {
+	uint32 r = 1;
+	uint32 g = 2;
+	uint32 b = 3;
+	uint32 a = 4;	
+}
+
+message matrix {
+	uint32 rows = 1;
+	uint32 cols = 2;
+	repeated float data = 3 [packed=true];
+}
+
+message vertex_3d_array {
+	repeated vertex_3d vertices = 1;
+}
+
+message vertex_4d_array {
+	repeated vertex_4d vertices = 1;
+}
+
+message color_array {
+	repeated color colors = 1;
+}
+
+message mesh_data {
+	repeated vertex_3d vertices = 1;
+	repeated uint32 indices = 2;
+	string name = 3;
+	optional vertex_3d_array vertex_normals = 4;
+	optional color_array vertex_colors = 5;
+}
+
+message aabb {
+	size_3d diagonal = 1;
+	vertex_3d translation = 2;
+}
+
+message obb {
+	aabb axis_aligned = 1;
+	quaternion rotation = 2;
+}
+
+message named_request {
+	string name = 1;
+}
+
+service mesh_com {
+  rpc transmit_mesh_data (stream named_request) returns (stream mesh_data) {}
+}

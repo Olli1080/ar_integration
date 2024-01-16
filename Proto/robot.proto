@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "vertex.proto";
+package generated;
+
+option optimize_for = LITE_RUNTIME;
+option cc_enable_arenas = true;
+
+message joints {
+	float theta_1 = 1;
+	float theta_2 = 2;
+	float theta_3 = 3;
+    float theta_4 = 4;
+    float theta_5 = 5;
+    float theta_6 = 6;
+    float theta_7 = 7;
+}
+
+message voxels {
+	matrix robot_origin = 1;
+	float voxel_side_length = 2;
+	repeated vertex_3d_ui voxel_coords = 3;
+}
+
+service robot_com {
+    rpc transmit_joints (google.protobuf.Empty) returns (stream joints) {}
+    rpc transmit_voxels (google.protobuf.Empty) returns (stream voxels) {}
+}

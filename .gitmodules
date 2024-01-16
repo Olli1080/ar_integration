@@ -1,0 +1,12 @@
+[submodule "Plugins/UXTools"]
+	path = Plugins/UXTools
+	url = https://github.com/Olli1080/MixedReality-UXTools-Unreal.git
+	branch = 5.2_plugin
+[submodule "Plugins/MicrosoftOpenXR"]
+	path = Plugins/MicrosoftOpenXR
+	url = https://github.com/Olli1080/Microsoft-OpenXR-Unreal.git
+	branch = 5.2_plugin
+[submodule "Plugins/grpc_plugin/Source/vcpkg"]
+	path = Plugins/grpc_plugin/Source/vcpkg
+	url = https://github.com/microsoft/vcpkg.git
+	ignore = dirty
