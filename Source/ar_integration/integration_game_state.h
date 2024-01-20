@@ -10,6 +10,7 @@
 #include "mesh_client.h"
 #include "pcl_client.h"
 #include "franka_client.h"
+#include "franka_voxel.h"
 #include "hand_tracking_client.h"
 #include "grpc_wrapper.h"
 
@@ -34,6 +35,8 @@ class AR_INTEGRATION_API A_integration_game_state : public AGameStateBase
 	GENERATED_BODY()
 	
 public:
+
+	typedef TVariant<F_object_instance_data, F_object_instance_colored_box> F_object_instance;
 
 	/**
 	 * initializes clients and arpin
@@ -145,7 +148,16 @@ public:
 	F_post_actors_delegate on_post_actors;
 
 private:
+
+	void update_meshes(const TSet<FString>& pending_proto);
+	void update_actors(const TArray<FString>& to_delete);
 	
+	void handle_object_instance(const F_object_instance& instance);
+
+	void init();
+
+	static FString get_object_instance_id(const F_object_instance& data);
+
 	/*
 	 * Retrieves prototype and corresponding mesh if possible
 	 * @returns false if neither is present
@@ -211,8 +223,6 @@ private:
 	std::mutex delete_mutex;
 	std::mutex actor_mutex;
 	std::mutex anchor_mutex;
-
-	typedef TVariant<F_object_instance_data, F_object_instance_colored_box> F_object_instance;
 
 	/**
 	 * removes const ref from type signature

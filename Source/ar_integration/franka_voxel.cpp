@@ -46,7 +46,7 @@ void A_franka_voxel::set_voxels(const F_voxel_data& data)
 	for (const auto& p : data.indices)
 	{
 		instanced->AddInstance(FTransform(FQuat::Identity,
-			p * data.voxel_side_length,
+			p * data.voxel_side_length, //TODO:: InScale3D check
 			FVector(0.01 * data.voxel_side_length)), true);
 	}
 }

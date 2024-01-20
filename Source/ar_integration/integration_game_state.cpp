@@ -1,7 +1,14 @@
 #include "integration_game_state.h"
 
-#include "franka_voxel.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+
+template<typename ... Ts>
+struct Overload : Ts ... {
+	using Ts::operator() ...;
+};
+template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
+
+static constexpr float xr_factor = 100.f;
 
 A_integration_game_state::A_integration_game_state()
 {
@@ -38,20 +45,7 @@ void A_integration_game_state::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	/**
-	 * load potentially existing workspace anchor at startup
-	 */
-	if (starting && UARBlueprintLibrary::IsARPinLocalStoreReady())
-	{
-		starting = false;
-		auto pins = UARBlueprintLibrary::LoadARPinsFromLocalStore();
-		auto it = pins.Find(pin_save_name);
-		if (it)
-		{
-			anchor_pin = *it;
-			UARBlueprintLibrary::PinComponentToARPin(pin_component, anchor_pin);
-		}
-	}
+	init();
 	
 	std::unique_lock top_lock(anchor_mutex);
 	if (!anchor_pin) return;
@@ -68,135 +62,17 @@ void A_integration_game_state::Tick(float DeltaSeconds)
 		Swap(delete_list, to_delete);
 		Swap(pending_prototypes, pending_proto);
 	}
-	/**
-	 * try to get object prototypes from server and cache them
-	 */
-	mesh_client->get_object_prototypes(pending_proto.Array(),
-		object_prototypes);
 
-	TSet<FString> new_meshes;
-	for (const auto& proto : pending_proto)
-	{
-		/**
-		 * if object prototype is still not present ignore
-		 */
-		auto it_0 = object_prototypes.Find(proto);
-		if (!it_0) continue;
+	update_meshes(pending_proto);
+	update_actors(to_delete);	
 
-		/**
-		 * add mesh to new_meshes if not already cached
-		 */
-		auto it_1 = meshes.Find(it_0->mesh_name);
-		if (!it_1) new_meshes.Add(it_0->mesh_name);
-	}
-
-	/**
-	 * load meshes which weren't cached
-	 */
-	mesh_client->get_meshes(new_meshes.Array(), meshes);
-	
-	/**
-	 * actors might habe been destroyed globaly outside this scope
-	 */	
-	for (const auto& actor : actors)
-	{
-		if (!IsValid(actor.Value))
-			actors.Remove(actor.Key);
-	}
+	to_set = to_set.FilterByPredicate([&to_delete](const F_object_instance& instance)
+		{
+			return to_delete.Contains(get_object_instance_id(instance));
+		});
 
 	for (const auto& set : to_set)
-	{
-		constexpr float xr_factor = 100.f;
-		A_procedural_mesh_actor* actor;
-		FTransform trafo;
-		std::function<void(A_procedural_mesh_actor* actor)> f;
-		FString id;
-		/**
-		 * Spawn and/or change
-		 */
-		if (set.IsType<F_object_instance_data>())
-		{
-			const auto& instance = set.Get<F_object_instance_data>();
-			id = instance.id;
-
-			const auto& data = instance.data;
-
-			const F_object_prototype* prototype;
-			const F_mesh_data* mesh;
-
-			/**
-			 * check if the prototypes and its mesh are cached
-			 */
-			if (!get_prototype_and_mesh(data.prototype_name, prototype, mesh))
-				continue;
-
-			/**
-			 * calculate the actor transform
-			 */
-			trafo = data.transform;
-			trafo.ScaleTranslation(xr_factor);
-			trafo.SetScale3D(
-				trafo.GetScale3D() * 
-				prototype->bounding_box.GetExtent() * 
-				xr_factor);
-
-			/**
-			 * bind actor post constructor function
-			 */
-			f = [this, data = create_proc_mesh_data(*prototype, *mesh)]
-			(A_procedural_mesh_actor* actor)
-			{
-				actor->set_from_data(std::move(data));
-			};
-		}
-		else
-		{
-			const auto& colored_box = set.Get<F_object_instance_colored_box>();
-			id = colored_box.id;
-			const auto& data = colored_box.data;				
-
-			const auto& [box, color] = data;
-			/**
-			 * calculate the actor transform
-			 */
-			trafo = FTransform(
-				box.rotation,
-				box.axis_box.GetCenter() * xr_factor,
-				box.axis_box.GetExtent() * xr_factor);
-
-			/**
-			 * bind actor post constructor function
-			 */
-			f = [this, actor_color = FLinearColor(color)]
-			(A_procedural_mesh_actor* actor)
-			{
-				actor->wireframe(std::move(actor_color));
-			};					
-		}
-		/**
-		 * 1. spawn or find
-		 * 2. post spawn or update
-		 * 3. attach to anchor component
-		 * 4. set transform in workspace
-		 */
-		actor = find_or_spawn(id);
-		f(actor);
-		actor->AttachToComponent(pin_component, 
-			FAttachmentTransformRules::KeepRelativeTransform);
-		
-		actor->SetActorRelativeTransform(trafo);
-	}
-
-	/**
-	 * remove any actors from the scene and @ref{actors}
-	 * which have been deleted
-	 */
-	A_procedural_mesh_actor* temp_del;
-	for (const auto& del : to_delete)
-	{
-		if (actors.RemoveAndCopyValue(del, temp_del))
-			temp_del->Destroy();
-	}
+		handle_object_instance(set);
 }
 
 void A_integration_game_state::change_channel(FString target)
@@ -356,6 +232,169 @@ void A_integration_game_state::sync_and_subscribe()
 	object_client->sync_objects();
 	object_client->async_subscribe_objects();
 	object_client->async_subscribe_delete_objects();
+}
+
+void A_integration_game_state::update_meshes(const TSet<FString>& pending_proto)
+{
+	/**
+	 * try to get object prototypes from server and cache them
+	 */
+	mesh_client->get_object_prototypes(pending_proto.Array(),
+		object_prototypes);
+
+	TSet<FString> new_meshes;
+	for (const auto& proto : pending_proto)
+	{
+		/**
+		 * if object prototype is still not present ignore
+		 */
+		auto it_0 = object_prototypes.Find(proto);
+		if (!it_0) continue;
+
+		/**
+		 * add mesh to new_meshes if not already cached
+		 */
+		auto it_1 = meshes.Find(it_0->mesh_name);
+		if (!it_1) new_meshes.Add(it_0->mesh_name);
+	}
+
+	/**
+	 * load meshes which weren't cached
+	 */
+	mesh_client->get_meshes(new_meshes.Array(), meshes);
+}
+
+void A_integration_game_state::update_actors(const TArray<FString>& to_delete)
+{
+	/**
+	 * actors might habe been destroyed globaly outside this scope
+	 */
+	for (const auto& actor : actors)
+	{
+		if (!IsValid(actor.Value))
+			actors.Remove(actor.Key);
+	}
+
+	/**
+	 * remove any actors from the scene and @ref{actors}
+	 * which have been deleted
+	 */
+	A_procedural_mesh_actor* temp_del;
+	for (const auto& del : to_delete)
+	{
+		if (actors.RemoveAndCopyValue(del, temp_del))
+			temp_del->Destroy();
+	}
+}
+
+void A_integration_game_state::handle_object_instance(const F_object_instance& instance)
+{
+	FTransform trafo;
+	std::function<void(A_procedural_mesh_actor* actor)> f;
+
+	/**
+	 * Spawn and/or change
+	 */
+	const bool earlyOut = Visit(Overload{
+		[&](const F_object_instance_data& instance_data)
+		{
+			const auto& data = instance_data.data;
+
+			const F_object_prototype* prototype;
+			const F_mesh_data* mesh;
+
+			/**
+			 * check if the prototypes and its mesh are cached
+			 */
+			if (!get_prototype_and_mesh(data.prototype_name, prototype, mesh))
+				return true;
+
+			/**
+			 * calculate the actor transform
+			 */
+			trafo = data.transform;
+			trafo.ScaleTranslation(xr_factor);
+			trafo.SetScale3D(
+				trafo.GetScale3D() *
+				prototype->bounding_box.GetExtent() *
+				xr_factor);
+
+			/**
+			 * bind actor post constructor function
+			 */
+			f = [this, data = create_proc_mesh_data(*prototype, *mesh)]
+			(A_procedural_mesh_actor* actor)
+				{
+					actor->set_from_data(std::move(data));
+				};
+			return false;
+		},
+		[&](const F_object_instance_colored_box& instance_cb)
+		{
+			const auto& [box, color] = instance_cb.data;
+			/**
+			 * calculate the actor transform
+			 */
+			trafo = FTransform(
+				box.rotation,
+				box.axis_box.GetCenter() * xr_factor,
+				box.axis_box.GetExtent() * xr_factor);
+
+			/**
+			 * bind actor post constructor function
+			 */
+			f = [this, actor_color = FLinearColor(color)]
+			(A_procedural_mesh_actor* actor)
+				{
+					actor->wireframe(std::move(actor_color));
+				};
+
+			return false;
+		}
+	}, instance);
+
+	if (earlyOut)
+		return;
+
+	/**
+	 * 1. spawn or find
+	 * 2. post spawn or update
+	 * 3. attach to anchor component
+	 * 4. set transform in workspace
+	 */
+	const FString id = get_object_instance_id(instance);
+	A_procedural_mesh_actor* actor = find_or_spawn(id);
+	f(actor);
+	actor->AttachToComponent(pin_component,
+		FAttachmentTransformRules::KeepRelativeTransform);
+
+	actor->SetActorRelativeTransform(trafo);
+}
+
+void A_integration_game_state::init()
+{
+	/**
+	 * load potentially existing workspace anchor at startup
+	 */
+	if (starting && UARBlueprintLibrary::IsARPinLocalStoreReady())
+	{
+		starting = false;
+		auto pins = UARBlueprintLibrary::LoadARPinsFromLocalStore();
+		auto it = pins.Find(pin_save_name);
+		if (it)
+		{
+			anchor_pin = *it;
+			UARBlueprintLibrary::PinComponentToARPin(pin_component, anchor_pin);
+		}
+	}
+}
+
+FString A_integration_game_state::get_object_instance_id(const F_object_instance& data)
+{
+	return Visit(Overload{
+		[](const F_object_instance_data& instance) { return instance.id; },
+		[](const F_object_instance_colored_box& instance) { return instance.id; }
+		}, data);
 }
 
 bool A_integration_game_state::get_prototype_and_mesh(
