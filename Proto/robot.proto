@@ -23,7 +23,12 @@ message voxels {
 	repeated vertex_3d_ui voxel_coords = 3;
 }
 
+message tcps {
+	repeated vertex_3d points = 1;
+}
+
 service robot_com {
     rpc transmit_joints (google.protobuf.Empty) returns (stream joints) {}
     rpc transmit_voxels (google.protobuf.Empty) returns (stream voxels) {}
+    rpc transmit_tcps (google.protobuf.Empty) returns (stream tcps) {}  
 }
