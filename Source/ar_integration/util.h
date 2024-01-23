@@ -562,3 +562,9 @@ inline F_voxel_data convert(const generated::voxels& in)
 
 	return res;
 }
+
+template<>
+inline TArray<FVector> convert(const generated::tcps& in)
+{
+	return convert_array<FVector>(in.points());
+}

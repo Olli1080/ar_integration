@@ -3,34 +3,33 @@
 #include "CoreMinimal.h"
 #include "Engine/StaticMeshActor.h"
 
-#include "franka_voxel.generated.h"
+#include "franka_tcps.generated.h"
 
 /**
  * @class for displaying of points as voxels with a pre-usage
  * defined resolution
  */
 UCLASS(Blueprintable)
-class AR_INTEGRATION_API A_franka_voxel : public AActor
+class AR_INTEGRATION_API A_franka_tcps : public AActor
 {
 	GENERATED_BODY()
 public:
 
-	A_franka_voxel();
+	A_franka_tcps();
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginDestroy() override;
 
 	/**
-	 * Adds indices as voxels with side_length
-	 * relative to the robot's origin
+	 * Adds tcp's of the robot
 	 */
 	UFUNCTION(BlueprintCallable)
-	void set_voxels(const F_voxel_data& data);
+	void set_tcps(const TArray<FVector>& data);
 
 private:
 
 	/**
-	 * @var mesh global mesh of voxels
+	 * @var mesh global mesh of points
 	 */
 	UPROPERTY()
 	UStaticMesh* mesh;

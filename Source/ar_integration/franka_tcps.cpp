@@ -1,9 +1,8 @@
-#include "franka_voxel.h"
+#include "franka_tcps.h"
 
-#include "grpc_wrapper.h"
 #include "Components/InstancedStaticMeshComponent.h"
 
-A_franka_voxel::A_franka_voxel()
+A_franka_tcps::A_franka_tcps()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -11,7 +10,7 @@ A_franka_voxel::A_franka_voxel()
 	 * load global mesh and material by engine ref
 	 */
 	mesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(
-		TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")).Object;
+		TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")).Object;
 
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
 		TEXT("Material'/Game/voxel_material_opaque.voxel_material_opaque'")).Object;
@@ -28,27 +27,22 @@ A_franka_voxel::A_franka_voxel()
 	this->AddInstanceComponent(instanced);
 }
 
-void A_franka_voxel::Tick(float DeltaSeconds)
+void A_franka_tcps::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 }
 
-void A_franka_voxel::BeginDestroy()
+void A_franka_tcps::BeginDestroy()
 {
 	Super::BeginDestroy();
 }
 
-void A_franka_voxel::set_voxels(const F_voxel_data& data)
+void A_franka_tcps::set_tcps(const TArray<FVector>& data)
 {
 	instanced->ClearInstances();
-	auto trafo = data.robot_origin.Inverse();
-	trafo.ScaleTranslation(100.f);
-	instanced->SetRelativeTransform(trafo);
-	
-	for (const auto& p : data.indices)
+
+	for (const auto& p : data)
 	{
-		instanced->AddInstance(FTransform(FQuat::Identity,
-			p * data.voxel_side_length, //TODO:: InScale3D check
-			FVector(0.01 * data.voxel_side_length)));
+		instanced->AddInstance(FTransform(FQuat::Identity, p * 100, FVector(0.01, 0.01, 0.01)));
 	}
 }

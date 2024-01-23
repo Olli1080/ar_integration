@@ -16,7 +16,11 @@ A_integration_game_state::A_integration_game_state()
 
 	debug_client = NewObject<U_debug_client>();
 	mesh_client = NewObject<U_mesh_client>();
+
 	franka_client = NewObject<U_franka_client>();
+	franka_tcp_client = NewObject<U_franka_tcp_client>();
+	franka_joint_client = NewObject<U_franka_joint_client>();
+
 	channel = NewObject<U_grpc_channel>();
 
 	pin_component = CreateDefaultSubobject<USceneComponent>("pin_component");
@@ -36,8 +40,15 @@ void A_integration_game_state::BeginPlay()
 	pcl_client->visualize = false;
 
 	hand_tracking_client = GetWorld()->SpawnActor<A_hand_tracking_client>(params);
+
 	franka_voxel = GetWorld()->SpawnActor<A_franka_voxel>(params);
+	franka_tcps = GetWorld()->SpawnActor<A_franka_tcps>(params);
+	franka = GetWorld()->SpawnActor<AFranka>(params);
+
 	franka_client->on_voxel_data.AddDynamic(this, &A_integration_game_state::handle_voxels);
+	franka_tcp_client->on_tcp_data.AddDynamic(this, &A_integration_game_state::handle_tcps);
+	franka_joint_client->on_joint_data.AddDynamic(this, &A_integration_game_state::handle_joints);
+
 	on_post_actors.Broadcast();
 }
 
@@ -91,6 +102,8 @@ void A_integration_game_state::change_channel(FString target)
 	 */
 	I_Base_Client_Interface::Execute_set_channel(debug_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(franka_client, channel);
+	I_Base_Client_Interface::Execute_set_channel(franka_tcp_client, channel);
+	I_Base_Client_Interface::Execute_set_channel(franka_joint_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(pcl_client, channel);
 	/**
 	 * create new object_client and bind all the signals to
@@ -142,6 +155,8 @@ void A_integration_game_state::change_channel(FString target)
 		hand_tracking_client->async_transmit_data();
 	}
 	franka_client->async_transmit_data();
+	franka_tcp_client->async_transmit_data();
+	franka_joint_client->async_transmit_data();
 
 	on_channel_change.Broadcast(channel);
 }
@@ -448,4 +463,14 @@ A_procedural_mesh_actor* A_integration_game_state::find_or_spawn(const FString& 
 void A_integration_game_state::handle_voxels(const F_voxel_data& data)
 {
 	franka_voxel->set_voxels(data);
+}
+
+void A_integration_game_state::handle_tcps(const TArray<FVector>& data)
+{
+	franka_tcps->set_tcps(data);
+}
+
+void A_integration_game_state::handle_joints(const FFrankaJoints& data)
+{
+	franka->SetJoints(data);
 }

@@ -243,7 +243,7 @@ public:
 	FFrankaJoints joints;
 
 	UFUNCTION(BlueprintSetter)
-	void SetJoints(FFrankaJoints new_joints);
+	void SetJoints(const FFrankaJoints& new_joints);
 
 	/*UFUNCTION(BlueprintCallable)
 	void SetJoint(int idx, F_Joint value);*/

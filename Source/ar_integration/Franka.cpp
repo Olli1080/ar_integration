@@ -253,7 +253,7 @@ void AFranka::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AFranka::SetJoints(FFrankaJoints new_joints)
+void AFranka::SetJoints(const FFrankaJoints& new_joints)
 {
 	this->joints = new_joints;
 
