@@ -11,13 +11,15 @@ static FRobot generateFrankaBlueprint()
 	auto& links = robot.links;
 	auto& tcp = robot.tcp;
 
-	base.transform = FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(0, 1, 0), UE_PI)/*, offset */);
+	base.transform = FTransform::Identity;
+		//FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(1, 0, 0), UE_PI / 2.)/*, offset */);
+	// FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(0, 1, 0), UE_PI)/*, offset */);
 	base.meshData.Add({ TEXT("/Script/Engine.StaticMesh'/Game/Franka/Base_white.Base_white'"), EColorFranka::WHITE });
 	base.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Base_dark.Base_dark'"), EColorFranka::DARK});
 
 	{ //link 1
 		FLink link;
-		link.DhParameter = { FUnitConversion::Convert<double>(0.333, EUnit::Meters, EUnit::Centimeters), 	0, 	  0,FMath::DegreesToRadians(0) };
+		link.DhParameter = { FUnitConversion::Convert<double>(0.333, EUnit::Meters, EUnit::Centimeters), 	0, 	  0,FMath::DegreesToRadians(0), DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link1_white.Link1_white'"), EColorFranka::WHITE});
 		link.composite.Add(std::move(comp));
@@ -25,7 +27,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 2
 		FLink link;
-		link.DhParameter = { 0, 	0, 	  0,    FMath::DegreesToRadians(-90) };
+		link.DhParameter = { 0, 	0, 	  0,    FMath::DegreesToRadians(-90), DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link2_white.Link2_white'"), EColorFranka::WHITE});
 		link.composite.Add(std::move(comp));
@@ -33,7 +35,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 3
 		FLink link;
-		link.DhParameter = { FUnitConversion::Convert<double>(0.316, EUnit::Meters, EUnit::Centimeters), 	0,       0,    FMath::DegreesToRadians(90) };
+		link.DhParameter = { FUnitConversion::Convert<double>(0.316, EUnit::Meters, EUnit::Centimeters), 	0,       0,    FMath::DegreesToRadians(90), DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link3_white.Link3_white'"), EColorFranka::WHITE});
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link3_dark.Link3_dark'"), EColorFranka::DARK});
@@ -42,7 +44,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 4
 		FLink link;
-		link.DhParameter = { 0, 	0,  FUnitConversion::Convert<double>(0.0825, EUnit::Meters, EUnit::Centimeters),    FMath::DegreesToRadians(90) };
+		link.DhParameter = { 0, 	0,  FUnitConversion::Convert<double>(0.0825, EUnit::Meters, EUnit::Centimeters),    FMath::DegreesToRadians(90), DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link4_white.Link4_white'"), EColorFranka::WHITE});
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link4_dark.Link4_dark'"), EColorFranka::DARK});
@@ -51,7 +53,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 5
 		FLink link;
-		link.DhParameter = { FUnitConversion::Convert<double>(0.384, EUnit::Meters, EUnit::Centimeters), 	0, FUnitConversion::Convert<double>(-0.0825, EUnit::Meters, EUnit::Centimeters), FMath::DegreesToRadians(-90) };
+		link.DhParameter = { FUnitConversion::Convert<double>(0.384, EUnit::Meters, EUnit::Centimeters), 	0, FUnitConversion::Convert<double>(-0.0825, EUnit::Meters, EUnit::Centimeters), FMath::DegreesToRadians(-90), DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link5_white.Link5_white'"), EColorFranka::WHITE});
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link5_dark.Link5_dark'"), EColorFranka::DARK});
@@ -60,7 +62,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 6
 		FLink link;
-		link.DhParameter = { 0, 	0,       0,    FMath::DegreesToRadians(90) };
+		link.DhParameter = { 0, 	0,       0,    FMath::DegreesToRadians(90), DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link6_white.Link6_white'"), EColorFranka::WHITE});
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link6_dark.Link6_dark'"), EColorFranka::DARK });
@@ -72,7 +74,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 7
 		FLink link;
-		link.DhParameter = { 0, 	0,   FUnitConversion::Convert<double>(0.088, EUnit::Meters, EUnit::Centimeters),    FMath::DegreesToRadians(90) };
+		link.DhParameter = { 0, 	0,   FUnitConversion::Convert<double>(0.088, EUnit::Meters, EUnit::Centimeters),    FMath::DegreesToRadians(90), DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link7_with_KMS_white.Link7_with_KMS_white'"), EColorFranka::WHITE });
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link7_with_KMS_dark.Link7_with_KMS_dark'"), EColorFranka::DARK });
@@ -82,7 +84,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 8
 		FLink link;
-		link.DhParameter = { FUnitConversion::Convert<double>(0.1714, EUnit::Meters, EUnit::Centimeters), 	FMath::DegreesToRadians(-45),   0.0,    0 };
+		link.DhParameter = { FUnitConversion::Convert<double>(0.1714, EUnit::Meters, EUnit::Centimeters), 	FMath::DegreesToRadians(-45),   0.0,    0, DHConvention::CRAIGS };
 		FComposite comp;
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Hand_white.Hand_white'"), EColorFranka::WHITE });
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Hand_metalic.Hand_metalic'"), EColorFranka::METALLIC });
@@ -91,7 +93,7 @@ static FRobot generateFrankaBlueprint()
 	}
 	{ //link 9
 		FLink link;
-		link.DhParameter = { FUnitConversion::Convert<double>(0.06, EUnit::Meters, EUnit::Centimeters), 	0,   0.0,    0 };
+		link.DhParameter = { FUnitConversion::Convert<double>(0.06, EUnit::Meters, EUnit::Centimeters), 	0,   0.0,    0, DHConvention::CRAIGS };
 		{
 			FComposite comp;
 			comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/finger_metalic.finger_metalic'"), EColorFranka::METALLIC });
@@ -180,7 +182,7 @@ AFranka::AFranka()
 			builder.Append("]");
 
 			const auto linkComponent = addStructureComponent(builder.ToString());
-			linkComponent->SetRelativeTransform(DhParameter.generateDHMatrix().Inverse());
+			linkComponent->SetRelativeTransform(DhParameter.generateDHMatrix());
 
 			linkStructure.Add(linkComponent);
 			parameters.Add(DhParameter);
@@ -258,7 +260,7 @@ void AFranka::SetJoints(const FFrankaJoints& new_joints)
 	this->joints = new_joints;
 
 	for (int i = 0; i < 7; ++i)
-		linkStructure[i]->SetRelativeTransform(parameters[i].generateDHMatrix(0.0, joints.getValue(i)).Inverse());
+		linkStructure[i]->SetRelativeTransform(parameters[i].generateDHMatrix(0.0, joints.getValue(i)));
 }
 #if WITH_EDITOR
 
@@ -291,7 +293,7 @@ void AFranka::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyCh
 		{
 			memberProp.RemoveFromStart("theta_");
 			int index = FCString::Atoi(*memberProp);
-			linkStructure[index]->SetRelativeTransform(parameters[index].generateDHMatrix(0.0, joints.getValue(index)).Inverse());
+			linkStructure[index]->SetRelativeTransform(parameters[index].generateDHMatrix(0.0, joints.getValue(index)));
 
 		//	int index = PropertyChangedEvent.GetArrayIndex(prop->GetFName().ToString());
 			 
@@ -338,7 +340,7 @@ USceneComponent* AFranka::addStructureComponent(FName name)
 USceneComponent* AFranka::addStructureLink(FName name, FTransform transform)
 {
 	auto current = addStructureComponent(name);
-	current->SetRelativeTransform(parameters[linkStructure.Num()].generateDHMatrix().Inverse());
+	current->SetRelativeTransform(parameters[linkStructure.Num()].generateDHMatrix());
 	//current->SetRelativeTransform(transform);
 
 	if (linkStructure.Num() == 0)
