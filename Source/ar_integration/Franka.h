@@ -91,11 +91,18 @@ struct F_DHParameter
 		{
 			inter = FTransform{ FMatrix
 			{
+				{cT * cA, sT * cA, -sA, -(d + dD) * sA},
+				{-sT, cT, 0.f, a},
+				{cT * sA, sT * sA, cA, (d + dD) * cA},
+				{0.f, 0.f, 0.f, 1.f}
+			}.GetTransposed() };
+			/*inter = FTransform{ FMatrix
+			{
 				{cT, -sT, 0.f, a},
 				{sT * cA, cT * cA, -sA, -(d + dD) * sA},
 				{sT * sA, cT * sA, cA, (d + dD) * cA},
 				{0.f, 0.f, 0.f, 1.f}
-			}.GetTransposed() };
+			}.GetTransposed() };*/
 		}
 		return inter;//fconv.Inverse() * inter * fconv;
 	}
@@ -264,12 +271,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-
-	static inline FTransform conv = FTransform(FMatrix(
-		UE::Math::TPlane<double>{1, 0, 0, 0},
-		UE::Math::TPlane<double>{0, 0, 1, 0},
-		UE::Math::TPlane<double>{0, 1, 0, 0},
-		UE::Math::TPlane<double>{0, 0, 0, 1}));
 
 	//static inline FTransform conv = FTransform::Identity;
 

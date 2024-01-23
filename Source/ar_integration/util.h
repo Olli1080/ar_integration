@@ -31,7 +31,7 @@
  * Transformation matrix is bijective
  * unreal <-> visualizer
  */
-static const float mask[4][4] = {
+/*static const float mask[4][4] = {
 		{
 			1.f, -1.f, -1.f, -1.f
 		},
@@ -44,7 +44,28 @@ static const float mask[4][4] = {
 		{
 			-1.f, 1.f, 1.f, 1.f
 		}
-};
+};*/
+
+FMatrix apply_mask(const FMatrix& mat)
+{
+	const auto& M = mat.M;
+
+	return FMatrix
+	{
+		{
+			M[1][1], M[1][0], M[1][2], M[1][3]
+		},
+		{
+			M[0][1], M[0][0], M[0][2], M[0][3]
+		},
+		{
+			M[2][1], M[2][0], M[2][2], M[2][3]
+		},
+		{
+			0.f, 0.f, 0.f, 1.f
+		}
+	}.GetTransposed();
+}
 
 /**
  * template for conversion between unreal usable types and generated types
@@ -55,13 +76,13 @@ out convert(const in&);
 template<>
 inline FVector convert(const generated::vertex_3d& in)
 {
-	return FVector(-in.x(), in.y(), in.z());
+	return FVector(in.y(), in.x(), in.z());
 }
 
 template<>
 inline FVector convert(const generated::vertex_3d_ui& in)
 {
-	return FVector(-static_cast<float>(in.x()), in.y(), in.z());
+	return FVector(in.y(), in.x(), in.z());
 }
 
 template<>
@@ -73,22 +94,22 @@ inline FVector convert(const generated::size_3d& in)
 template<>
 inline FQuat convert(const generated::quaternion& in)
 {
-	return FQuat(-in.x(), in.y(), in.z(), -in.w());
+	return FQuat(in.y(), in.x(), in.z(), -in.w());
 }
 
 template<>
 inline generated::quaternion convert(const FQuat& in)
 {
 	FQuat temp = in;
-	temp.X *= -1;
+	//temp.X *= -1;
 	temp.W *= -1;
 
 	temp.Normalize();
 	
 	generated::quaternion out;
 
-	out.set_x(temp.X);
-	out.set_y(temp.Y);
+	out.set_x(temp.Y);
+	out.set_y(temp.X);
 	out.set_z(temp.Z);
 	out.set_w(temp.W);
 	
@@ -103,7 +124,7 @@ inline FQuat convert(const generated::vertex_3d& in)
 		FMath::RadiansToDegrees(in.z()),
 		FMath::RadiansToDegrees(in.x())));
 
-	out.X *= -1;
+	//out.X *= -1;
 	out.W *= -1;
 	
 	return out;
@@ -294,8 +315,8 @@ template<>
 inline generated::vertex_3d convert(const FVector& in)
 {
 	generated::vertex_3d out;
-	out.set_x(-in.X);
-	out.set_y(in.Y);
+	out.set_x(in.Y);
+	out.set_y(in.X);
 	out.set_z(in.Z);
 
 	return out;
@@ -305,8 +326,8 @@ template<>
 inline std::array<float, 3> convert(const FVector& in)
 {
 	std::array<float, 3> out;
-	out[0] = -in.X;
-	out[1] = in.Y;
+	out[0] = in.Y;
+	out[1] = in.X;
 	out[2] = in.Z;
 
 	return out;
@@ -356,7 +377,9 @@ inline FTransform convert(const generated::matrix& in)
 	
 	for (size_t y = 0; y < 4; ++y)
 		for (size_t x = 0; x < 4; ++x)
-			temp.M[y][x] = mask[y][x] * in.data()[y * 4 + x];
+			temp.M[y][x] = in.data()[y * 4 + x];
+
+	apply_mask(temp);
 	
 	return FTransform(std::move(temp));
 }
@@ -370,11 +393,12 @@ inline generated::matrix convert(const FTransform& in)
 	const auto data = out.mutable_data();
 	data->Reserve(16);
 
-	const auto& temp = in.ToMatrixWithScale();
+	const auto temp = in.ToMatrixWithScale();
+	apply_mask(temp);
 	
 	for (size_t y = 0; y < 4; ++y)
 		for (size_t x = 0; x < 4; ++x)
-			data->Add(mask[y][x] * temp.M[y][x]);
+			data->Add(temp.M[y][x]);
 
 	return out;
 }

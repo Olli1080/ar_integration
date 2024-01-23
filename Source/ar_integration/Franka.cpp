@@ -3,6 +3,21 @@
 #include "Math/UnitConversion.h"
 #include <string>
 
+/**
+ * @brief Staticmesh conversion
+ */
+static inline FTransform conv = FTransform(FMatrix(
+	UE::Math::TPlane<double>{0, 1, 0, 0},
+	UE::Math::TPlane<double>{0, 0, 1, 0},
+	UE::Math::TPlane<double>{1, 0, 0, 0},
+	UE::Math::TPlane<double>{0, 0, 0, 1}));
+
+static auto conv2 = FTransform(FMatrix(
+	UE::Math::TPlane<double>{0, 1, 0, 0},
+	UE::Math::TPlane<double>{1, 0, 0, 0},
+	UE::Math::TPlane<double>{0, 0, 1, 0},
+	UE::Math::TPlane<double>{0, 0, 0, 1}));
+
 static FRobot generateFrankaBlueprint()
 {
 	FRobot robot;
@@ -11,7 +26,9 @@ static FRobot generateFrankaBlueprint()
 	auto& links = robot.links;
 	auto& tcp = robot.tcp;
 
-	base.transform = FTransform::Identity;
+	base.transform = conv2;
+		//FTransform::Identity;
+		//FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(0, 0, 1), UE_PI / 2.)/*, offset */);
 		//FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(1, 0, 0), UE_PI / 2.)/*, offset */);
 	// FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(0, 1, 0), UE_PI)/*, offset */);
 	base.meshData.Add({ TEXT("/Script/Engine.StaticMesh'/Game/Franka/Base_white.Base_white'"), EColorFranka::WHITE });
