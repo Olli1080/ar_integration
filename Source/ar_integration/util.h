@@ -46,7 +46,7 @@
 		}
 };*/
 
-FMatrix apply_mask(const FMatrix& mat)
+inline FMatrix apply_mask(const FMatrix& mat)
 {
 	const auto& M = mat.M;
 

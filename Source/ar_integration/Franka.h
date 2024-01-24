@@ -89,22 +89,22 @@ struct F_DHParameter
 		}
 		else
 		{
-			inter = FTransform{ FMatrix
+			/*inter = FTransform{ FMatrix
 			{
 				{cT * cA, sT * cA, -sA, -(d + dD) * sA},
 				{-sT, cT, 0.f, a},
 				{cT * sA, sT * sA, cA, (d + dD) * cA},
 				{0.f, 0.f, 0.f, 1.f}
-			}.GetTransposed() };
-			/*inter = FTransform{ FMatrix
+			}.GetTransposed() };*/
+			inter = FTransform{ FMatrix
 			{
 				{cT, -sT, 0.f, a},
 				{sT * cA, cT * cA, -sA, -(d + dD) * sA},
 				{sT * sA, cT * sA, cA, (d + dD) * cA},
 				{0.f, 0.f, 0.f, 1.f}
-			}.GetTransposed() };*/
+			}.GetTransposed() };
 		}
-		return inter;//fconv.Inverse() * inter * fconv;
+		return fconv * inter * fconv;
 	}
 };
 

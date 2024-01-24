@@ -26,7 +26,8 @@ static FRobot generateFrankaBlueprint()
 	auto& links = robot.links;
 	auto& tcp = robot.tcp;
 
-	base.transform = conv2;
+	base.transform = FTransform::Identity;
+		//conv2;
 		//FTransform::Identity;
 		//FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(0, 0, 1), UE_PI / 2.)/*, offset */);
 		//FTransform(UE::Math::TQuat<double>(UE::Math::TVector<double>(1, 0, 0), UE_PI / 2.)/*, offset */);
@@ -244,7 +245,7 @@ AFranka::AFranka()
 	tcpComp->SetupAttachment(structure.Last());
 	tcpComp->SetRelativeTransform(blueprint.tcp.transform);
 
-	coord_blueprint = ConstructorHelpers::FObjectFinder<UBlueprint>(TEXT("/Script/Engine.Blueprint'/Game/coord_frame.coord_frame'")).Object->GeneratedClass;
+	coord_blueprint = ConstructorHelpers::FObjectFinder<UBlueprint>(TEXT("/Script/Engine.Blueprint'/Game/coord_frame_2.coord_frame_2'")).Object->GeneratedClass;
 	//blueprint.tcp.transform
 }
 
@@ -264,6 +265,13 @@ void AFranka::BeginPlay()
 
 	FAttachmentTransformRules rules(EAttachmentRule::SnapToTarget, true);
 	sth->AttachToComponent(tcpComp, rules);
+
+	for (auto& comp : structure)
+	{
+		auto sth0 = GetWorld()->SpawnActor<AActor>(coord_blueprint, params);
+		sth0->AttachToComponent(comp, rules);
+		sth0->SetActorScale3D(FVector{ 0.2 });
+	}
 }
 
 // Jeden Frame aufgerufen
