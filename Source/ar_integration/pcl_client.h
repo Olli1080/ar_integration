@@ -24,7 +24,7 @@ public:
 
 	virtual ~pcl_transmission() = default;
 	
-	virtual void transmit_data(generated::maybe_matrix& response) = 0;
+	virtual void transmit_data(generated::ICP_Result& response) = 0;
 	virtual bool send_data(const F_point_cloud& pcl) = 0;
 	virtual grpc::Status end_data() = 0;
 
@@ -40,7 +40,7 @@ public:
 	pcl_transmission_vertices(std::unique_ptr<generated::pcl_com::Stub>& stub);
 	virtual ~pcl_transmission_vertices() override = default;
 
-	virtual void transmit_data(generated::maybe_matrix& response) override;
+	virtual void transmit_data(generated::ICP_Result& response) override;
 	virtual bool send_data(const F_point_cloud& pcl) override;
 	virtual grpc::Status end_data() override;
 
@@ -57,7 +57,7 @@ public:
 	pcl_transmission_draco(std::unique_ptr<generated::pcl_com::Stub>& stub);
 	virtual ~pcl_transmission_draco() override = default;
 
-	virtual void transmit_data(generated::maybe_matrix& response) override;
+	virtual void transmit_data(generated::ICP_Result& response) override;
 	virtual bool send_data(const F_point_cloud& pcl) override;
 	virtual grpc::Status end_data() override;
 

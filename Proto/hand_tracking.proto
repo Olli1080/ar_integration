@@ -8,6 +8,7 @@ option optimize_for = LITE_RUNTIME;
 option cc_enable_arenas = true;
 
 import "vertex.proto";
+import "meta_data.proto";
 
 enum hand_index {
   LEFT = 0;

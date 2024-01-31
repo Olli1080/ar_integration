@@ -8,6 +8,7 @@ option optimize_for = LITE_RUNTIME;
 option cc_enable_arenas = true;
 
 import "vertex.proto";
+import "meta_data.proto";
 
 message colored_box {
 	obb obbox = 1;
@@ -16,7 +17,7 @@ message colored_box {
 
 message object_data {
 	string prototype_name = 1;
-	matrix transform = 2;
+	Matrix transform = 2;
 }
 
 message object_instance {

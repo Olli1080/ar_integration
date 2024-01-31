@@ -16,7 +16,7 @@ pcl_transmission_vertices::pcl_transmission_vertices(std::unique_ptr<generated::
 	context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 }
 
-void pcl_transmission_vertices::transmit_data(generated::maybe_matrix& response)
+void pcl_transmission_vertices::transmit_data(generated::ICP_Result& response)
 {
 	stream = stub->transmit_pcl_data(&context, &response);
 	stream->WaitForInitialMetadata();
@@ -41,7 +41,7 @@ pcl_transmission_draco::pcl_transmission_draco(std::unique_ptr<generated::pcl_co
 	context.set_compression_algorithm(GRPC_COMPRESS_NONE);
 }
 
-void pcl_transmission_draco::transmit_data(generated::maybe_matrix& response)
+void pcl_transmission_draco::transmit_data(generated::ICP_Result& response)
 {
 	stream = stub->transmit_draco_data(&context, &response);
 	stream->WaitForInitialMetadata();
@@ -125,7 +125,7 @@ grpc::Status A_pcl_client::send_point_clouds()
 	 * generate context data for transmission
 	 * and set compression algorithm
 	 */
-	generated::maybe_matrix response;
+	generated::ICP_Result response;
 
 	const auto extrinsic_inv = cam->get_camera_view_matrix().Inverse();
 	constexpr float xr_scale = 100.f;
@@ -221,11 +221,14 @@ grpc::Status A_pcl_client::send_point_clouds()
 	 * evaluate if point cloud correspondence with server is valid
 	 * and transform it and set table_to_point_cloud
 	 */
-	if (status.ok() && response.has_data())
+	if (status.ok())
 	{
-		auto result = convert<FTransform>(response.data());
-		result.ScaleTranslation(xr_scale);
-		table_to_point_cloud = result;
+		if (auto result = convert<TOptional<FTransform>>(response); result.IsSet())
+		{
+			//TODO:: should no longer be needed
+			//result.ScaleTranslation(xr_scale);
+			table_to_point_cloud = result.GetValue();
+		}
 	}
 	return status;
 }

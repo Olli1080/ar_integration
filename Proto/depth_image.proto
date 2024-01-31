@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 import "vertex.proto";
+import "meta_data.proto";
 
 package generated;
 
@@ -18,14 +19,14 @@ message draco_data {
 	int64 timestamp = 2;
 }
 
-message maybe_matrix {
-	optional matrix data = 1;
+message ICP_Result {
+	optional Matrix_TF_Meta data = 1;
 }
 
 service pcl_com {
 
   //sends point clouds and receives possible correspondence
-  rpc transmit_pcl_data (stream pcl_data) returns (maybe_matrix) {}
-  rpc transmit_draco_data (stream draco_data) returns (maybe_matrix) {}
+  rpc transmit_pcl_data (stream pcl_data) returns (ICP_Result) {}
+  rpc transmit_draco_data (stream draco_data) returns (ICP_Result) {}
   rpc transmit_obb (obb) returns (google.protobuf.Empty) {}
 }

@@ -21,11 +21,19 @@
 
 #include "Math/UnitConversion.h"
 
+#include "TransformHelper.h"
+
 /**
  * This header allows hiding details of generated types
  * and modularity of conversion implementation
  * thereby allowing full utilization of the unreal system
  */
+
+inline static Transformation::TransformationMeta UnrealMeta(
+	{ Transformation::Axis::Y, Transformation::AxisDirection::POSITIVE },
+	{ Transformation::Axis::X, Transformation::AxisDirection::POSITIVE },
+	{ Transformation::Axis::Z, Transformation::AxisDirection::POSITIVE }
+);
 
 /*
  * Transformation matrix is bijective
@@ -45,7 +53,7 @@
 			-1.f, 1.f, 1.f, 1.f
 		}
 };*/
-
+/*
 inline FMatrix apply_mask(const FMatrix& mat)
 {
 	const auto& M = mat.M;
@@ -66,6 +74,7 @@ inline FMatrix apply_mask(const FMatrix& mat)
 		}
 	}.GetTransposed();
 }
+*/
 
 /**
  * template for conversion between unreal usable types and generated types
@@ -334,9 +343,9 @@ inline std::array<float, 3> convert(const FVector& in)
 }
 
 template<>
-inline generated::matrix convert(const FMatrix& in)
+inline generated::Matrix convert(const FMatrix& in)
 {
-	generated::matrix out;
+	generated::Matrix out;
 	out.set_rows(4);
 	out.set_cols(4);
 	const auto data = out.mutable_data();
@@ -349,7 +358,7 @@ inline generated::matrix convert(const FMatrix& in)
 }
 
 template<>
-inline FMatrix convert(const generated::matrix& in)
+inline FMatrix convert(const generated::Matrix& in)
 {
 	FMatrix out;
 
@@ -366,7 +375,7 @@ inline FMatrix convert(const generated::matrix& in)
 }
 
 template<>
-inline FTransform convert(const generated::matrix& in)
+inline FTransform convert(const generated::Matrix& in)
 {
 	FMatrix temp;
 
@@ -379,22 +388,22 @@ inline FTransform convert(const generated::matrix& in)
 		for (size_t x = 0; x < 4; ++x)
 			temp.M[y][x] = in.data()[y * 4 + x];
 
-	apply_mask(temp);
+	//apply_mask(temp);
 	
 	return FTransform(std::move(temp));
 }
 
 template<>
-inline generated::matrix convert(const FTransform& in)
+inline generated::Matrix convert(const FTransform& in)
 {
-	generated::matrix out;
+	generated::Matrix out;
 	out.set_rows(4);
 	out.set_cols(4);
 	const auto data = out.mutable_data();
 	data->Reserve(16);
 
 	const auto temp = in.ToMatrixWithScale();
-	apply_mask(temp);
+	//apply_mask(temp);
 	
 	for (size_t y = 0; y < 4; ++y)
 		for (size_t x = 0; x < 4; ++x)
@@ -591,4 +600,40 @@ template<>
 inline TArray<FVector> convert(const generated::tcps& in)
 {
 	return convert_array<FVector>(in.points());
+}
+
+template<>
+inline Transformation::AxisAlignment convert(const generated::Axis_Alignment& in)
+{
+	return {
+		static_cast<Transformation::Axis>(in.axis()),
+		static_cast<Transformation::AxisDirection>(in.direction())
+	};
+}
+
+template<>
+inline Transformation::TransformationMeta convert(const generated::Transformation_Meta& in)
+{
+	return {
+		convert<Transformation::AxisAlignment>(in.right()),
+		convert<Transformation::AxisAlignment>(in.forward()),
+		convert<Transformation::AxisAlignment>(in.up())
+	};
+}
+
+template<>
+inline TOptional<FTransform> convert(const generated::ICP_Result& in)
+{
+	if (!in.has_data())
+		return {};
+
+	const auto& data = in.data();
+
+	//TODO:: add intermediate step with optional meta transform
+	if (!data.has_transformation_meta())
+		return convert<FTransform>(data.matrix());
+	
+	return Transformation::TransformationConverter(
+		convert<Transformation::TransformationMeta>(data.transformation_meta()), UnrealMeta
+	).convert_matrix_proto(data.matrix());
 }

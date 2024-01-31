@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package generated;
+import "meta_data.proto";
 
 option optimize_for = LITE_RUNTIME;
 option cc_enable_arenas = true;
@@ -42,7 +43,7 @@ message color {
 	uint32 a = 4;	
 }
 
-message matrix {
+message Matrix {
 	uint32 rows = 1;
 	uint32 cols = 2;
 	repeated float data = 3 [packed=true];
@@ -80,6 +81,16 @@ message obb {
 
 message named_request {
 	string name = 1;
+}
+
+/**
+ * messages with meta attached
+ * meta is attached optional as optimization for streams
+ */
+message Matrix_TF_Meta
+{
+	Matrix matrix = 1;
+	optional Transformation_Meta transformation_meta = 2;
 }
 
 service mesh_com {

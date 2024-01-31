@@ -6,6 +6,7 @@ option optimize_for = LITE_RUNTIME;
 option cc_enable_arenas = true;
 
 import "vertex.proto";
+import "meta_data.proto";
 
 message object_prototype {
 	aabb bounding_box = 1;

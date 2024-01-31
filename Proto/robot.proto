@@ -2,6 +2,8 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 import "vertex.proto";
+import "meta_data.proto";
+
 package generated;
 
 option optimize_for = LITE_RUNTIME;
@@ -18,7 +20,7 @@ message joints {
 }
 
 message voxels {
-	matrix robot_origin = 1;
+	Matrix robot_origin = 1;
 	float voxel_side_length = 2;
 	repeated vertex_3d_ui voxel_coords = 3;
 }
