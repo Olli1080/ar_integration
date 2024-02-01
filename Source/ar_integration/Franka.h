@@ -9,8 +9,8 @@
 
 #include "Franka.generated.h"
 
-UENUM()
-enum DHConvention
+UENUM(BlueprintType)
+enum class DHConvention : uint8
 {
 	CLASSIC     UMETA(DisplayName = "Classic"),
 	CRAIGS      UMETA(DisplayName = "Craigs")
@@ -43,7 +43,7 @@ struct F_DHParameter
 	double alpha = 0.0;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	double convention = 0.0;
+	DHConvention convention = DHConvention::CLASSIC;
 	
 	FTransform generateDHMatrix(double dD = 0.0, double dTheta = 0.0) const
 	{
