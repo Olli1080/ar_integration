@@ -9,7 +9,7 @@ package generated;
 option optimize_for = LITE_RUNTIME;
 option cc_enable_arenas = true;
 
-message joints {
+message Joints {
 	float theta_1 = 1;
 	float theta_2 = 2;
 	float theta_3 = 3;
@@ -19,18 +19,28 @@ message joints {
     float theta_7 = 7;
 }
 
-message voxels {
+message Voxels {
 	Matrix robot_origin = 1;
 	float voxel_side_length = 2;
 	repeated vertex_3d_ui voxel_coords = 3;
 }
 
-message tcps {
+message Tcps {
 	repeated vertex_3d points = 1;
 }
 
+message Voxel_TF_Meta {
+    Voxels voxels = 1;
+	optional Transformation_Meta transformation_meta = 2;
+}
+
+message Tcps_TF_Meta {
+	Tcps tcps = 1;
+    optional Transformation_Meta transformation_meta = 2;
+}
+
 service robot_com {
-    rpc transmit_joints (google.protobuf.Empty) returns (stream joints) {}
-    rpc transmit_voxels (google.protobuf.Empty) returns (stream voxels) {}
-    rpc transmit_tcps (google.protobuf.Empty) returns (stream tcps) {}  
+    rpc transmit_joints (google.protobuf.Empty) returns (stream Joints) {}
+    rpc transmit_voxels (google.protobuf.Empty) returns (stream Voxel_TF_Meta) {}
+    rpc transmit_tcps (google.protobuf.Empty) returns (stream Tcps_TF_Meta) {}  
 }

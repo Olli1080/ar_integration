@@ -42,7 +42,7 @@ void A_franka_tcps::set_tcps(const TArray<FVector>& data)
 	instanced->ClearInstances();
 
 	for (const auto& p : data)
-	{
-		instanced->AddInstance(FTransform(FQuat::Identity, p * 100, FVector(0.01, 0.01, 0.01)));
-	}
+		instanced->AddInstance(FTransform(
+			FQuat::Identity, p, FVector(0.01, 0.01, 0.01)
+		));
 }

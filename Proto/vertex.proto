@@ -93,6 +93,11 @@ message Matrix_TF_Meta
 	optional Transformation_Meta transformation_meta = 2;
 }
 
+message Vertex_3D_Meta {
+	vertex_3d vertex = 1;
+	optional Transformation_Meta transformation_meta = 2;
+}
+
 service mesh_com {
   rpc transmit_mesh_data (stream named_request) returns (stream mesh_data) {}
 }

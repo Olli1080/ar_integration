@@ -159,6 +159,21 @@ namespace Transformation
 		return out_f;
 	}
 
+	FVector TransformationConverter::convert_index_proto(const generated::vertex_3d_ui& in_f) const
+	{
+		FVector out_f;
+
+		static_assert(sizeof(FVector) == 3 * sizeof(double), "Engine related code changed; Fix this!");
+
+		auto out = &out_f.X;
+		const auto in = std::to_array({ in_f.x(), in_f.y(), in_f.z() });
+
+		for (const auto& [column, row, multiplier] : assignments)
+			out[row] = static_cast<float>(in[column]) * multiplier;
+
+		return out_f;
+	}
+
 	generated::Matrix TransformationConverter::convert_matrix_proto(const FTransform& in) const
 	{
 		return convert_proto(assignments, in, factor);
@@ -205,6 +220,11 @@ namespace Transformation
 			(out_f.*out[row])(in[column] * factor * multiplier);
 
 		return out_f;
+	}
+
+	float TransformationConverter::convert_scale(float scale) const
+	{
+		return factor * scale;
 	}
 
 	FTransform TransformationConverter::convert(const SparseAssignments& ttt, const FTransform& in, float scale)
@@ -286,31 +306,6 @@ namespace Transformation
 		}
 		return matrix;
 	}
-
-	/*
-	FTransform TransformationMeta::convert(const std::array<std::tuple<int8_t, int8_t, float>, 3>& ttt, const generated::Matrix& in, float scale)
-	{
-		FMatrix matrix;
-		auto& M = matrix.M;
-		for (size_t x = 0; x < 3; ++x)
-			M[3][x] = 0.f;
-		M[3][3] = 1.f;
-
-		for (size_t y = 0; y < 3; ++y)
-		{
-			const auto& for_row = ttt[y];
-
-			for (size_t x = 0; x < 3; ++x)
-			{
-				const auto& for_col = ttt[x];
-				M[std::get<1>(for_row)][std::get<1>(for_col)] = access_at<generated::Matrix, float>(in, y, x)* std::get<2>(for_row)* std::get<2>(for_col);
-			}
-			M[std::get<1>(for_row)][3] = access_at<generated::Matrix, float>(in, y, 3)* std::get<2>(for_row);
-		}
-		for (size_t y = 0; y < 3; ++y)
-			M[y][3] *= scale;
-		return FTransform{ matrix };
-	}*/
 
 	void TransformationMeta::rotateLeft()
 	{

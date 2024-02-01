@@ -38,7 +38,7 @@ void U_franka_client::async_transmit_data()
 
 			while (status == franka_client_status::RUNNING)
 			{
-				generated::voxels data;
+				generated::Voxel_TF_Meta data;
 				if (!stream->Read(&data))
 					break;
 
@@ -132,7 +132,7 @@ void U_franka_tcp_client::async_transmit_data()
 
 			while (status == franka_client_status::RUNNING)
 			{
-				generated::tcps data;
+				generated::Tcps_TF_Meta data;
 				if (!stream->Read(&data))
 					break;
 
@@ -224,7 +224,7 @@ void U_franka_joint_client::async_transmit_data()
 
 			while (status == franka_client_status::RUNNING)
 			{
-				generated::joints data;
+				generated::Joints data;
 				if (!stream->Read(&data))
 					break;
 

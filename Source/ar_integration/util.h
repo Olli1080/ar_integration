@@ -32,7 +32,8 @@
 inline static Transformation::TransformationMeta UnrealMeta(
 	{ Transformation::Axis::Y, Transformation::AxisDirection::POSITIVE },
 	{ Transformation::Axis::X, Transformation::AxisDirection::POSITIVE },
-	{ Transformation::Axis::Z, Transformation::AxisDirection::POSITIVE }
+	{ Transformation::Axis::Z, Transformation::AxisDirection::POSITIVE },
+	{std::centi{}}
 );
 
 /*
@@ -83,15 +84,34 @@ template<typename out, typename in>
 out convert(const in&);
 
 template<>
+inline Transformation::AxisAlignment convert(const generated::Axis_Alignment& in)
+{
+	return {
+		static_cast<Transformation::Axis>(in.axis()),
+		static_cast<Transformation::AxisDirection>(in.direction())
+	};
+}
+
+template<>
+inline Transformation::TransformationMeta convert(const generated::Transformation_Meta& in)
+{
+	return {
+		convert<Transformation::AxisAlignment>(in.right()),
+		convert<Transformation::AxisAlignment>(in.forward()),
+		convert<Transformation::AxisAlignment>(in.up())
+	};
+}
+
+template<>
 inline FVector convert(const generated::vertex_3d& in)
 {
-	return FVector(in.y(), in.x(), in.z());
+	return FVector(in.x(), in.y(), in.z());
 }
 
 template<>
 inline FVector convert(const generated::vertex_3d_ui& in)
 {
-	return FVector(in.y(), in.x(), in.z());
+	return FVector(in.x(), in.y(), in.z());
 }
 
 template<>
@@ -103,7 +123,7 @@ inline FVector convert(const generated::size_3d& in)
 template<>
 inline FQuat convert(const generated::quaternion& in)
 {
-	return FQuat(in.y(), in.x(), in.z(), -in.w());
+	return FQuat(in.x(), in.y(), in.z(), in.w());
 }
 
 template<>
@@ -111,14 +131,14 @@ inline generated::quaternion convert(const FQuat& in)
 {
 	FQuat temp = in;
 	//temp.X *= -1;
-	temp.W *= -1;
+	//temp.W *= -1;
 
 	temp.Normalize();
 	
 	generated::quaternion out;
 
-	out.set_x(temp.Y);
-	out.set_y(temp.X);
+	out.set_x(temp.X);
+	out.set_y(temp.Y);
 	out.set_z(temp.Z);
 	out.set_w(temp.W);
 	
@@ -129,12 +149,12 @@ template<>
 inline FQuat convert(const generated::vertex_3d& in)
 {
 	auto out = FQuat::MakeFromEuler(FVector(
+		FMath::RadiansToDegrees(in.x()),
 		FMath::RadiansToDegrees(in.y()),
-		FMath::RadiansToDegrees(in.z()),
-		FMath::RadiansToDegrees(in.x())));
+		FMath::RadiansToDegrees(in.z())));
 
 	//out.X *= -1;
-	out.W *= -1;
+	//out.W *= -1;
 	
 	return out;
 }
@@ -324,19 +344,20 @@ template<>
 inline generated::vertex_3d convert(const FVector& in)
 {
 	generated::vertex_3d out;
-	out.set_x(in.Y);
-	out.set_y(in.X);
+	out.set_x(in.X);
+	out.set_y(in.Y);
 	out.set_z(in.Z);
 
 	return out;
 }
 
+//TODO:: is this in use?
 template<>
 inline std::array<float, 3> convert(const FVector& in)
 {
 	std::array<float, 3> out;
-	out[0] = in.Y;
-	out[1] = in.X;
+	out[0] = in.X;
+	out[1] = in.Y;
 	out[2] = in.Z;
 
 	return out;
@@ -586,10 +607,10 @@ inline generated::hand_data convert(const std::pair<FXRMotionControllerData, FDa
 }
 
 template<>
-inline F_voxel_data convert(const generated::voxels& in)
+inline F_voxel_data convert(const generated::Voxels& in)
 {
 	F_voxel_data res;
-	res.voxel_side_length = FUnitConversion::Convert<float>(in.voxel_side_length(), EUnit::Meters, EUnit::Centimeters);
+	res.voxel_side_length = in.voxel_side_length();
 	res.robot_origin = convert<FTransform>(in.robot_origin());
 	res.indices = convert_array<FVector>(in.voxel_coords());
 
@@ -597,28 +618,52 @@ inline F_voxel_data convert(const generated::voxels& in)
 }
 
 template<>
-inline TArray<FVector> convert(const generated::tcps& in)
+inline F_voxel_data convert(const generated::Voxel_TF_Meta& in)
+{
+	F_voxel_data res;
+
+	const auto& voxels = in.voxels();
+
+	if (!in.has_transformation_meta())
+		return convert<F_voxel_data>(voxels);
+	
+	using namespace Transformation;
+	const TransformationConverter converter(convert<TransformationMeta>(in.transformation_meta()), UnrealMeta);
+
+	res.voxel_side_length = converter.convert_scale(voxels.voxel_side_length());
+	res.robot_origin = converter.convert_matrix_proto(voxels.robot_origin());
+
+	res.indices.Reserve(voxels.voxel_coords_size());
+	for (const auto& p : voxels.voxel_coords())
+		res.indices.Add(converter.convert_index_proto(p));
+
+	return res;
+}
+
+template<>
+inline TArray<FVector> convert(const generated::Tcps& in)
 {
 	return convert_array<FVector>(in.points());
 }
 
 template<>
-inline Transformation::AxisAlignment convert(const generated::Axis_Alignment& in)
+inline TArray<FVector> convert(const generated::Tcps_TF_Meta& in)
 {
-	return {
-		static_cast<Transformation::Axis>(in.axis()),
-		static_cast<Transformation::AxisDirection>(in.direction())
-	};
-}
+	const auto& points = in.tcps().points();
 
-template<>
-inline Transformation::TransformationMeta convert(const generated::Transformation_Meta& in)
-{
-	return {
-		convert<Transformation::AxisAlignment>(in.right()),
-		convert<Transformation::AxisAlignment>(in.forward()),
-		convert<Transformation::AxisAlignment>(in.up())
-	};
+	if (!in.has_transformation_meta())
+		return convert_array<FVector>(points);
+
+	TArray<FVector> out;
+	out.Reserve(points.size());
+
+	using namespace Transformation;
+	const TransformationConverter converter(convert<TransformationMeta>(in.transformation_meta()), UnrealMeta);
+
+	for (const auto& p : points)
+		out.Add(converter.convert_point_proto(p));
+
+	return out;
 }
 
 template<>
