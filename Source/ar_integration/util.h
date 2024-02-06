@@ -674,7 +674,6 @@ inline TOptional<FTransform> convert(const generated::ICP_Result& in)
 
 	const auto& data = in.data();
 
-	//TODO:: add intermediate step with optional meta transform
 	if (!data.has_transformation_meta())
 		return convert<FTransform>(data.matrix());
 	

@@ -70,9 +70,9 @@ namespace Transformation
 			for (int8_t x = 0; x < 3; ++x)
 			{
 				if (x == column)
-					M[row][column] = multiplier * factor;
+					M[column][row] = multiplier * factor;
 				else
-					M[row][x] = 0.f;
+					M[x][row] = 0.f;
 			}
 		}
 
@@ -232,7 +232,7 @@ namespace Transformation
 		FMatrix matrix;
 		auto& M = matrix.M;
 		for (size_t x = 0; x < 3; ++x)
-			M[3][x] = 0.f;
+			M[x][3] = 0.f;
 		M[3][3] = 1.f;
 
 		const auto in_Matrix = in.ToMatrixWithScale();
@@ -247,9 +247,9 @@ namespace Transformation
 			{
 				//exploiting symmetry //row == x
 				const auto& [row, out_column, multiplier_x] = ttt[x];
-				M[out_row][out_column] = in_M[y][x] * multiplier_y * multiplier_x;
+				M[out_column][out_row] = in_M[x][y] * multiplier_y * multiplier_x;
 			}
-			M[out_row][3] = in_M[y][3] * multiplier_y * scale;
+			M[3][out_row] = in_M[3][y] * multiplier_y * scale;
 		}
 		return FTransform{ matrix };
 	}
@@ -259,7 +259,7 @@ namespace Transformation
 		FMatrix matrix;
 		auto& M = matrix.M;
 		for (size_t x = 0; x < 3; ++x)
-			M[3][x] = 0.f;
+			M[x][3] = 0.f;
 		M[3][3] = 1.f;
 
 		for (size_t y = 0; y < 3; ++y)
@@ -271,9 +271,9 @@ namespace Transformation
 			{
 				//exploiting symmetry //row == x
 				const auto& [row, out_column, multiplier_x] = ttt[x];
-				M[out_row][out_column] = in.data()[y * 4 + x] * multiplier_y * multiplier_x;
+				M[out_column][out_row] = in.data()[x * 4 + y] * multiplier_y * multiplier_x;
 			}
-			M[out_row][3] = in.data()[y * 4 + 3] * multiplier_y * scale;
+			M[3][out_row] = in.data()[3 * 4 + y] * multiplier_y * scale;
 		}
 		return FTransform{ matrix };
 	}
@@ -286,7 +286,7 @@ namespace Transformation
 		auto& M = *matrix.mutable_data();
 		M.Resize(16, 0);
 		
-		M.Set(3 * 4 + 3, 1.f);
+		M.Set(15, 1.f);
 
 		const auto in_Matrix = in.ToMatrixWithScale();
 		const auto& in_M = in_Matrix.M;
@@ -300,9 +300,9 @@ namespace Transformation
 			{
 				//exploiting symmetry //row == x
 				const auto& [row, out_column, multiplier_x] = ttt[x];
-				M.Set(out_row * 4 + out_column, in_M[y][x] * multiplier_y * multiplier_x);
+				M.Set(out_column * 4 + out_row, in_M[x][y] * multiplier_y * multiplier_x);
 			}
-			M.Set(out_row * 4 + 3, in_M[y][3] * multiplier_y * scale);
+			M.Set(4 * 3 + out_row, in_M[3][y] * multiplier_y * scale);
 		}
 		return matrix;
 	}
