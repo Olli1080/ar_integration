@@ -150,4 +150,11 @@ namespace Transformation
 
 		mutable std::unique_ptr<bool> right_handed;
 	};
+
+	inline static Transformation::TransformationMeta UnrealMeta(
+		{ Transformation::Axis::Y, Transformation::AxisDirection::POSITIVE },
+		{ Transformation::Axis::X, Transformation::AxisDirection::POSITIVE },
+		{ Transformation::Axis::Z, Transformation::AxisDirection::POSITIVE },
+		{ std::centi{} }
+	);
 }

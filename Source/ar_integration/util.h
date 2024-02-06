@@ -29,54 +29,6 @@
  * thereby allowing full utilization of the unreal system
  */
 
-inline static Transformation::TransformationMeta UnrealMeta(
-	{ Transformation::Axis::Y, Transformation::AxisDirection::POSITIVE },
-	{ Transformation::Axis::X, Transformation::AxisDirection::POSITIVE },
-	{ Transformation::Axis::Z, Transformation::AxisDirection::POSITIVE },
-	{std::centi{}}
-);
-
-/*
- * Transformation matrix is bijective
- * unreal <-> visualizer
- */
-/*static const float mask[4][4] = {
-		{
-			1.f, -1.f, -1.f, -1.f
-		},
-		{
-			-1.f, 1.f, 1.f, 1.f
-		},
-		{
-			-1.f, 1.f, 1.f, 1.f
-		},
-		{
-			-1.f, 1.f, 1.f, 1.f
-		}
-};*/
-/*
-inline FMatrix apply_mask(const FMatrix& mat)
-{
-	const auto& M = mat.M;
-
-	return FMatrix
-	{
-		{
-			M[1][1], M[1][0], M[1][2], M[1][3]
-		},
-		{
-			M[0][1], M[0][0], M[0][2], M[0][3]
-		},
-		{
-			M[2][1], M[2][0], M[2][2], M[2][3]
-		},
-		{
-			0.f, 0.f, 0.f, 1.f
-		}
-	}.GetTransposed();
-}
-*/
-
 /**
  * template for conversion between unreal usable types and generated types
  */
@@ -676,8 +628,9 @@ inline TOptional<FTransform> convert(const generated::ICP_Result& in)
 
 	if (!data.has_transformation_meta())
 		return convert<FTransform>(data.matrix());
-	
-	return Transformation::TransformationConverter(
-		convert<Transformation::TransformationMeta>(data.transformation_meta()), UnrealMeta
+
+	using namespace Transformation;
+	return TransformationConverter(
+		convert<TransformationMeta>(data.transformation_meta()), UnrealMeta
 	).convert_matrix_proto(data.matrix());
 }

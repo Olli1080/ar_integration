@@ -47,7 +47,9 @@ void A_franka_voxel::set_voxels(const F_voxel_data& data)
 	for (const auto& p : data.indices)
 	{
 		instanced->AddInstance(FTransform(FQuat::Identity,
-			p * data.voxel_side_length, //TODO:: InScale3D check
+			p * data.voxel_side_length,
+			//Scale is multiplied by 0.01 because the default cube is
+			//1 meter in size instead of a centimeter
 			FVector(0.01 * data.voxel_side_length)));
 	}
 }

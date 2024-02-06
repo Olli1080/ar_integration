@@ -5,8 +5,6 @@
 
 #include "Components/StaticMeshComponent.h"
 
-#include <cmath>
-
 #include "Franka.generated.h"
 
 UENUM(BlueprintType)
@@ -21,14 +19,9 @@ struct F_DHParameter
 {
 	GENERATED_BODY()
 
-	F_DHParameter()
-	{
-		
-	}
+	F_DHParameter() = default;
 
-	F_DHParameter(double d, double theta, double a, double alpha, DHConvention convention)
-		: d(d), theta(theta), a(a), alpha(alpha), convention(convention)
-	{}
+	F_DHParameter(double d, double theta, double a, double alpha, DHConvention convention);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(Units="Meters"))
 	double d = 0.0;
@@ -45,67 +38,7 @@ struct F_DHParameter
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	DHConvention convention = DHConvention::CLASSIC;
 	
-	FTransform generateDHMatrix(double dD = 0.0, double dTheta = 0.0) const
-	{
-		/*FTransform conv = FTransform(FMatrix(
-			UE::Math::TVector<double>(0, 1, 0),
-			UE::Math::TVector<double>(1, 0, 0), 
-			UE::Math::TVector<double>(0, 0, 1), 
-			UE::Math::TVector<double>(0, 0, 0)));
-			*/
-		/*auto conv = FTransform(FMatrix(
-			UE::Math::TVector<double>(-1, 0, 0),
-			UE::Math::TVector<double>(0, 1, 0),
-			UE::Math::TVector<double>(0, 0, 1),
-			UE::Math::TVector<double>(0, 0, 0)));*/
-
-		double cT = std::cos(theta + dTheta);
-		double sT = std::sin(theta + dTheta);
-
-		double cA = std::cos(alpha);
-		double sA = std::sin(alpha);
-
-		///FTransform fconv = FTransform::Identity;
-
-		FTransform fconv(FMatrix{
-			{0, 1, 0, 0},
-			{1, 0, 0, 0},
-			{0, 0, 1, 0},
-			{0, 0, 0, 1}
-			});
-
-		FTransform inter;
-
-		if (convention == DHConvention::CLASSIC)
-		{
-			//[row][column]
-			inter = FTransform{ FMatrix
-			{
-				{cT, -sT * cA, sT * sA, a * cT},
-				{sT, cT * cA, -cT * sA, a * sT},
-				{0.f, sA, cA, d + dD},
-				{0.f, 0.f, 0.f, 1.f}
-			}.GetTransposed() };
-		}
-		else
-		{
-			/*inter = FTransform{ FMatrix
-			{
-				{cT * cA, sT * cA, -sA, -(d + dD) * sA},
-				{-sT, cT, 0.f, a},
-				{cT * sA, sT * sA, cA, (d + dD) * cA},
-				{0.f, 0.f, 0.f, 1.f}
-			}.GetTransposed() };*/
-			inter = FTransform{ FMatrix
-			{
-				{cT, -sT, 0.f, a},
-				{sT * cA, cT * cA, -sA, -(d + dD) * sA},
-				{sT * sA, cT * sA, cA, (d + dD) * cA},
-				{0.f, 0.f, 0.f, 1.f}
-			}.GetTransposed() };
-		}
-		return fconv * inter * fconv;
-	}
+	FTransform generateDHMatrix(double dD = 0.0, double dTheta = 0.0) const;
 };
 
 USTRUCT(BlueprintType)
@@ -271,14 +204,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-
-	//static inline FTransform conv = FTransform::Identity;
-
-	/*static inline FTransform conv = FTransform(FMatrix(
-		UE::Math::TPlane<double>{1, 0, 0, 0},
-		UE::Math::TPlane<double>{0, 0, -1, 0},
-		UE::Math::TPlane<double>{0, 1, 0, 0},
-		UE::Math::TPlane<double>{0, 0, 0, 1}));*/
+	
 	// Jeden Frame aufgerufen
 	virtual void Tick(float DeltaTime) override;
 
