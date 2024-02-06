@@ -29,6 +29,20 @@
  * thereby allowing full utilization of the unreal system
  */
 
+class TF_Conv_Wrapper
+{
+public:
+
+	TF_Conv_Wrapper() = default;
+	void set_source(const Transformation::TransformationMeta& meta);
+	const Transformation::TransformationConverter& converter() const;
+	bool has_converter() const;
+
+private:
+
+	std::unique_ptr<Transformation::TransformationConverter> m_converter;
+};
+
 /**
  * template for conversion between unreal usable types and generated types
  */
@@ -36,7 +50,7 @@ template<typename out, typename in>
 out convert(const in&);
 
 template<typename out, typename in>
-out convert_meta(const in&, const Transformation::TransformationConverter& cv);
+out convert_meta(const in&, TF_Conv_Wrapper& cv);
 
 
 template<typename inner_out, typename inner_in>
@@ -254,15 +268,3 @@ TArray<FVector> convert(const generated::Tcps_TF_Meta& in);
 
 template<>
 TOptional<FTransform> convert(const generated::ICP_Result& in);
-
-
-/*class TF_Conv_Wrapper
-{
-public:
-
-	TF_Conv_Wrapper() = default;
-
-private:
-
-	std::unique_ptr<Transformation::TransformationConverter> converter;
-};*/

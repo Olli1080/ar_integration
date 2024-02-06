@@ -425,17 +425,19 @@ F_voxel_data convert(const generated::Voxels& in)
 }
 
 template<>
-F_voxel_data convert(const generated::Voxel_TF_Meta& in)
+F_voxel_data convert_meta(const generated::Voxel_TF_Meta& in, TF_Conv_Wrapper& cv)
 {
-	F_voxel_data res;
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
 
 	const auto& voxels = in.voxels();
 
-	if (!in.has_transformation_meta())
+	if (!cv.has_converter())
 		return convert<F_voxel_data>(voxels);
 
-	using namespace Transformation;
-	const TransformationConverter converter(convert<TransformationMeta>(in.transformation_meta()), UnrealMeta);
+	F_voxel_data res;
+	const auto& converter = cv.converter();
 
 	res.voxel_side_length = converter.convert_scale(voxels.voxel_side_length());
 	res.robot_origin = converter.convert_matrix_proto(voxels.robot_origin());
@@ -454,21 +456,22 @@ TArray<FVector> convert(const generated::Tcps& in)
 }
 
 template<>
-TArray<FVector> convert(const generated::Tcps_TF_Meta& in)
+TArray<FVector> convert_meta(const generated::Tcps_TF_Meta& in, TF_Conv_Wrapper& cv)
 {
 	const auto& points = in.tcps().points();
 
-	if (!in.has_transformation_meta())
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	if (!cv.has_converter())
 		return convert_array<FVector>(points);
 
 	TArray<FVector> out;
 	out.Reserve(points.size());
 
-	using namespace Transformation;
-	const TransformationConverter converter(convert<TransformationMeta>(in.transformation_meta()), UnrealMeta);
-
 	for (const auto& p : points)
-		out.Add(converter.convert_point_proto(p));
+		out.Add(cv.converter().convert_point_proto(p));
 
 	return out;
 }
@@ -499,4 +502,19 @@ std::array<float, 3> convert(const FVector& in)
 	out[2] = in.Z;
 
 	return out;
+}
+
+void TF_Conv_Wrapper::set_source(const Transformation::TransformationMeta& meta)
+{
+	m_converter = std::make_unique<Transformation::TransformationConverter>(meta, Transformation::UnrealMeta);
+}
+
+const Transformation::TransformationConverter& TF_Conv_Wrapper::converter() const
+{
+	return *m_converter;
+}
+
+bool TF_Conv_Wrapper::has_converter() const
+{
+	return !!m_converter;
 }

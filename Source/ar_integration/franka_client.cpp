@@ -36,13 +36,15 @@ void U_franka_client::async_transmit_data()
 				stub->transmit_voxels(ctx.get(), nothing);
 			stream->WaitForInitialMetadata();
 
+			TF_Conv_Wrapper tf_wrapper;
+
 			while (status == franka_client_status::RUNNING)
 			{
 				generated::Voxel_TF_Meta data;
 				if (!stream->Read(&data))
 					break;
 
-				FFunctionGraphTask::CreateAndDispatchWhenReady([this, voxel_data = convert<F_voxel_data>(data)]()
+				FFunctionGraphTask::CreateAndDispatchWhenReady([this, voxel_data = convert_meta<F_voxel_data>(data, tf_wrapper)]()
 				{
 						on_voxel_data.Broadcast(voxel_data);
 				},
@@ -130,13 +132,14 @@ void U_franka_tcp_client::async_transmit_data()
 				stub->transmit_tcps(ctx.get(), nothing);
 			stream->WaitForInitialMetadata();
 
+			TF_Conv_Wrapper tf_wrapper;
 			while (status == franka_client_status::RUNNING)
 			{
 				generated::Tcps_TF_Meta data;
 				if (!stream->Read(&data))
 					break;
 
-				FFunctionGraphTask::CreateAndDispatchWhenReady([this, tcp_data = convert<TArray<FVector>>(data)]()
+				FFunctionGraphTask::CreateAndDispatchWhenReady([this, tcp_data = convert_meta<TArray<FVector>>(data, tf_wrapper)]()
 					{
 						on_tcp_data.Broadcast(tcp_data);
 					},
