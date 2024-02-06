@@ -56,22 +56,6 @@ FQuat convert_meta(const generated::quaternion& in, const Transformation::Transf
 }
 
 template<>
-generated::quaternion convert(const FQuat& in)
-{
-	FQuat temp = in;
-	temp.Normalize();
-
-	generated::quaternion out;
-
-	out.set_x(temp.X);
-	out.set_y(temp.Y);
-	out.set_z(temp.Z);
-	out.set_w(temp.W);
-
-	return out;
-}
-
-template<>
 FQuat convert_meta(const generated::Rotation_3d& in, const Transformation::TransformationConverter* cv)
 {
 	auto out = FQuat::MakeFromEuler(FVector(
@@ -184,43 +168,6 @@ F_obb convert_meta(const generated::obb& in, const Transformation::Transformatio
 }
 
 template<>
-generated::size_3d convert(const FVector& in)
-{
-	generated::size_3d out;
-	out.set_x(in.X);
-	out.set_y(in.Y);
-	out.set_z(in.Z);
-
-	return out;
-}
-
-template<>
-generated::vertex_3d convert(const FVector& in)
-{
-	generated::vertex_3d out;
-	out.set_x(in.X);
-	out.set_y(in.Y);
-	out.set_z(in.Z);
-
-	return out;
-}
-
-template<>
-generated::Matrix convert(const FMatrix& in)
-{
-	generated::Matrix out;
-	out.set_rows(4);
-	out.set_cols(4);
-	const auto data = out.mutable_data();
-	data->Reserve(16);
-	for (size_t y = 0; y < 4; ++y)
-		for (size_t x = 0; x < 4; ++x)
-			*data->Add() = in.M[y][x];
-
-	return out;
-}
-
-template<>
 FMatrix convert(const generated::Matrix& in)
 {
 	FMatrix out;
@@ -256,6 +203,205 @@ FTransform convert_meta(const generated::Matrix& in, const Transformation::Trans
 		return FTransform(std::move(temp));
 	}
 	return cv->convert_matrix_proto(in);
+}
+
+template<>
+F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverter* cv)
+{
+	F_object_data out;
+	out.prototype_name = convert<FString>(in.prototype_name());
+	out.transform = convert_meta<FTransform>(in.transform(), cv);
+
+	return out;
+}
+
+template<>
+F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverter* cv)
+{
+	F_colored_box out;
+	out.box = convert_meta<F_obb>(in.obbox(), cv);
+	out.color = convert<FColor>(in.box_color());
+
+	return out;
+}
+
+/*template<>
+F_object_instance_data convert(const generated::Object_Instance& in)
+{
+	F_object_instance_data out;
+
+	out.id = convert<FString>(in.id());
+	out.data = convert<F_object_data>(in.obj());
+
+	return out;
+}*/
+
+template<>
+F_object_instance_data convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
+{
+	F_object_instance_data out;
+
+	out.id = convert<FString>(in.id());
+	out.data = convert_meta<F_object_data>(in.obj(), cv);
+
+	return out;
+}
+
+template<>
+F_object_instance_data convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<F_object_instance_data>(in.object_instance(), &cv.converter());
+}
+
+template<>
+F_object_instance_colored_box convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
+{
+	F_object_instance_colored_box out;
+
+	out.id = convert<FString>(in.id());
+	out.data = convert_meta<F_colored_box>(in.box(), cv);//TODO:: has to be converted
+
+	return out;
+}
+
+template<>
+F_object_instance_colored_box convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<F_object_instance_colored_box>(in.object_instance(), &cv.converter());
+}
+
+template<>
+F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverter* cv)
+{
+	F_voxel_data res;
+	res.voxel_side_length = in.voxel_side_length();
+	if (cv != nullptr)
+		res.voxel_side_length = cv->convert_scale(res.voxel_side_length);
+
+	res.robot_origin = convert_meta<FTransform>(in.robot_origin(), cv);
+	res.indices = convert_array_meta<FVector>(in.voxel_indices(), cv);
+
+	return res;		
+}
+
+template<>
+F_voxel_data convert_meta(const generated::Voxel_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<F_voxel_data>(in.voxels(), &cv.converter());
+}
+
+template<>
+TArray<FVector> convert_meta(const generated::Tcps& in, const Transformation::TransformationConverter* cv)
+{
+	return convert_array_meta<FVector>(in.points(), cv);
+}
+
+template<>
+TArray<FVector> convert_meta(const generated::Tcps_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<TArray<FVector>>(in.tcps(), &cv.converter());
+}
+
+template<>
+TOptional<FTransform> convert(const generated::ICP_Result& in)
+{
+	if (!in.has_data())
+		return {};
+
+	const auto& data = in.data();
+
+	if (!data.has_transformation_meta())
+		return convert_meta<FTransform>(data.matrix(), nullptr);
+
+	using namespace Transformation;
+	TransformationConverter converter(
+		convert<TransformationMeta>(data.transformation_meta()), UnrealMeta
+	);
+	return convert_meta<FTransform>(data.matrix(), &converter);
+}
+
+template<>
+std::array<float, 3> convert(const FVector& in)
+{
+	std::array<float, 3> out;
+	out[0] = in.X;
+	out[1] = in.Y;
+	out[2] = in.Z;
+
+	return out;
+}
+
+
+
+
+template<>
+generated::quaternion convert(const FQuat& in)
+{
+	FQuat temp = in;
+	temp.Normalize();
+
+	generated::quaternion out;
+
+	out.set_x(temp.X);
+	out.set_y(temp.Y);
+	out.set_z(temp.Z);
+	out.set_w(temp.W);
+
+	return out;
+}
+
+
+template<>
+generated::size_3d convert(const FVector& in)
+{
+	generated::size_3d out;
+	out.set_x(in.X);
+	out.set_y(in.Y);
+	out.set_z(in.Z);
+
+	return out;
+}
+
+template<>
+generated::vertex_3d convert(const FVector& in)
+{
+	generated::vertex_3d out;
+	out.set_x(in.X);
+	out.set_y(in.Y);
+	out.set_z(in.Z);
+
+	return out;
+}
+
+template<>
+generated::Matrix convert(const FMatrix& in)
+{
+	generated::Matrix out;
+	out.set_rows(4);
+	out.set_cols(4);
+	const auto data = out.mutable_data();
+	data->Reserve(16);
+	for (size_t y = 0; y < 4; ++y)
+		for (size_t x = 0; x < 4; ++x)
+			*data->Add() = in.M[y][x];
+
+	return out;
 }
 
 template<>
@@ -333,79 +479,6 @@ generated::pcl_data convert(const F_point_cloud& pcl)
 }
 
 template<>
-F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverter* cv)
-{
-	F_object_data out;
-	out.prototype_name = convert<FString>(in.prototype_name());
-	out.transform = convert_meta<FTransform>(in.transform(), cv);
-
-	return out;
-}
-
-template<>
-F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverter* cv)
-{
-	F_colored_box out;
-	out.box = convert_meta<F_obb>(in.obbox(), cv);
-	out.color = convert<FColor>(in.box_color());
-
-	return out;
-}
-
-/*template<>
-F_object_instance_data convert(const generated::Object_Instance& in)
-{
-	F_object_instance_data out;
-
-	out.id = convert<FString>(in.id());
-	out.data = convert<F_object_data>(in.obj());
-
-	return out;
-}*/
-
-template<>
-F_object_instance_data convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
-{
-	F_object_instance_data out;
-
-	out.id = convert<FString>(in.id());
-	out.data = convert_meta<F_object_data>(in.obj(), cv);
-
-	return out;
-}
-
-template<>
-F_object_instance_data convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
-{
-	using namespace Transformation;
-	if (in.has_transformation_meta())
-		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
-
-	return convert_meta<F_object_instance_data>(in.object_instance(), &cv.converter());
-}
-
-template<>
-F_object_instance_colored_box convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
-{
-	F_object_instance_colored_box out;
-
-	out.id = convert<FString>(in.id());
-	out.data = convert_meta<F_colored_box>(in.box(), cv);//TODO:: has to be converted
-
-	return out;
-}
-
-template<>
-F_object_instance_colored_box convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
-{
-	using namespace Transformation;
-	if (in.has_transformation_meta())
-		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
-
-	return convert_meta<F_object_instance_colored_box>(in.object_instance(), &cv.converter());
-}
-
-template<>
 generated::Rotation_3d convert(const FQuat& in)
 {
 	generated::Rotation_3d out;
@@ -476,74 +549,8 @@ generated::hand_data convert(const std::pair<FXRMotionControllerData, FDateTime>
 	return out;
 }
 
-template<>
-F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverter* cv)
-{
-	F_voxel_data res;
-	res.voxel_side_length = in.voxel_side_length();
-	if (cv != nullptr)
-		res.voxel_side_length = cv->convert_scale(res.voxel_side_length);
 
-	res.robot_origin = convert_meta<FTransform>(in.robot_origin(), cv);
-	res.indices = convert_array_meta<FVector>(in.voxel_indices(), cv);
 
-	return res;		
-}
-
-template<>
-F_voxel_data convert_meta(const generated::Voxel_TF_Meta& in, TF_Conv_Wrapper& cv)
-{
-	using namespace Transformation;
-	if (in.has_transformation_meta())
-		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
-
-	return convert_meta<F_voxel_data>(in.voxels(), &cv.converter());
-}
-
-template<>
-TArray<FVector> convert_meta(const generated::Tcps& in, const Transformation::TransformationConverter* cv)
-{
-	return convert_array_meta<FVector>(in.points(), cv);
-}
-
-template<>
-TArray<FVector> convert_meta(const generated::Tcps_TF_Meta& in, TF_Conv_Wrapper& cv)
-{
-	using namespace Transformation;
-	if (in.has_transformation_meta())
-		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
-
-	return convert_meta<TArray<FVector>>(in.tcps(), &cv.converter());
-}
-
-template<>
-TOptional<FTransform> convert(const generated::ICP_Result& in)
-{
-	if (!in.has_data())
-		return {};
-
-	const auto& data = in.data();
-
-	if (!data.has_transformation_meta())
-		return convert_meta<FTransform>(data.matrix(), nullptr);
-
-	using namespace Transformation;
-	TransformationConverter converter(
-		convert<TransformationMeta>(data.transformation_meta()), UnrealMeta
-	);
-	return convert_meta<FTransform>(data.matrix(), &converter);
-}
-
-template<>
-std::array<float, 3> convert(const FVector& in)
-{
-	std::array<float, 3> out;
-	out[0] = in.X;
-	out[1] = in.Y;
-	out[2] = in.Z;
-
-	return out;
-}
 
 void TF_Conv_Wrapper::set_source(const Transformation::TransformationMeta& meta)
 {
