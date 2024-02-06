@@ -99,9 +99,10 @@ grpc::Status U_object_client::subscribe_objects(grpc::ClientContext& ctx) const
 		stub->transmit_object(&ctx, {});
 	stream->WaitForInitialMetadata();
 
-	generated::object_instance msg;
+	TF_Conv_Wrapper wrapper;
+	generated::Object_Instance_TF_Meta msg;
 	while (stream->Read(&msg))
-		process(msg);
+		process(msg, wrapper);
 	return stream->Finish();
 }
 
@@ -110,7 +111,7 @@ grpc::Status U_object_client::subscribe_delete_objects(grpc::ClientContext& ctx)
 	auto stream = stub->delete_object(&ctx, {});
 	stream->WaitForInitialMetadata();
 
-	generated::delete_request req;
+	generated::Delete_Request req;
 	while (stream->Read(&req))
 		on_object_delete.Broadcast(convert<FString>(req.id()));
 	return stream->Finish();
@@ -124,26 +125,28 @@ void U_object_client::sync_objects()
 	auto stream = stub->sync_objects(&ctx, {});
 	stream->WaitForInitialMetadata();
 
-	generated::object_instance msg;
+	TF_Conv_Wrapper wrapper;
+	generated::Object_Instance_TF_Meta msg;
 	while (stream->Read(&msg))
-		process(msg);
+		process(msg, wrapper);
 	stream->Finish();
 }
 
-void U_object_client::process(const generated::object_instance& instance) const
+void U_object_client::process(const generated::Object_Instance_TF_Meta& meta_instance, TF_Conv_Wrapper& wrapper) const
 {
 	/**
 	 * workaround for template issue with unreal reflection system
 	 */
+	const auto& instance = meta_instance.object_instance();
 	if (instance.has_obj())
 	{
-		const auto data = convert<F_object_instance_data>(instance);		
+		const auto data = convert_meta<F_object_instance_data>(meta_instance, wrapper);
 		on_object_instance_data.Broadcast(data);
 	}
 	else if (instance.has_box())
 	{
 		const auto data = 
-			convert<F_object_instance_colored_box>(instance);
+			convert_meta<F_object_instance_colored_box>(meta_instance, wrapper);
 		on_object_instance_colored_box.Broadcast(data);
 	}
 }

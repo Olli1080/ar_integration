@@ -159,7 +159,7 @@ namespace Transformation
 		return out_f;
 	}
 
-	FVector TransformationConverter::convert_index_proto(const generated::vertex_3d_ui& in_f) const
+	FVector TransformationConverter::convert_index_proto(const generated::index_3d& in_f) const
 	{
 		FVector out_f;
 

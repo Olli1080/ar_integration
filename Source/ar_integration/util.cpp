@@ -20,15 +20,21 @@ Transformation::TransformationMeta convert(const generated::Transformation_Meta&
 }
 
 template<>
-FVector convert(const generated::vertex_3d& in)
+FVector convert_meta(const generated::vertex_3d& in, const Transformation::TransformationConverter* cv)
 {
-	return FVector(in.x(), in.y(), in.z());
+	if (cv == nullptr)
+		return FVector(in.x(), in.y(), in.z());
+
+	return cv->convert_point_proto(in);
 }
 
 template<>
-FVector convert(const generated::vertex_3d_ui& in)
+FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverter* cv)
 {
-	return FVector(in.x(), in.y(), in.z());
+	if (cv == nullptr)
+		return FVector(in.x(), in.y(), in.z());
+	
+	return cv->convert_index_proto(in);
 }
 
 template<>
@@ -109,13 +115,13 @@ std::string convert(const FString& in)
 template<>
 F_mesh_data convert(const generated::mesh_data& in)
 {
-	F_mesh_data out;
-	out.vertices = convert_array<FVector>(in.vertices());
+	F_mesh_data out; //TODO::
+	out.vertices = convert_array_meta<FVector>(in.vertices(), nullptr);
 	out.indices = convert<TArray<int32>>(in.indices());
 	out.name = convert<FString>(in.name());
 
-	if (in.has_vertex_normals())
-		out.normals = convert_array<FVector>(in.vertex_normals().vertices());
+	if (in.has_vertex_normals()) //TODO::
+		out.normals = convert_array_meta<FVector>(in.vertex_normals().vertices(), nullptr);
 	if (in.has_vertex_colors())
 		out.colors = convert_array<FColor>(in.vertex_colors().colors());
 
@@ -125,8 +131,8 @@ F_mesh_data convert(const generated::mesh_data& in)
 template<>
 FBox convert(const generated::aabb& in)
 {
-	return FBox::BuildAABB(
-		convert<FVector>(in.translation()),
+	return FBox::BuildAABB( //TODO::
+		convert_meta<FVector>(in.translation(), nullptr),
 		convert<FVector>(in.diagonal()) / 2.f
 	);
 }
@@ -209,22 +215,25 @@ FMatrix convert(const generated::Matrix& in)
 }
 
 template<>
-FTransform convert(const generated::Matrix& in)
+FTransform convert_meta(const generated::Matrix& in, const Transformation::TransformationConverter* cv)
 {
-	FMatrix temp;
+	if (cv == nullptr)
+	{
+		FMatrix temp;
+		//TODO:: use cv
 
-	if (in.rows() != 4 ||
-		in.cols() != 4 ||
-		in.data_size() != 16)
-		return {};
+		if (in.rows() != 4 ||
+			in.cols() != 4 ||
+			in.data_size() != 16)
+			return {};
 
-	for (size_t y = 0; y < 4; ++y)
-		for (size_t x = 0; x < 4; ++x)
-			temp.M[y][x] = in.data()[y * 4 + x];
+		for (size_t y = 0; y < 4; ++y)
+			for (size_t x = 0; x < 4; ++x)
+				temp.M[y][x] = in.data()[y * 4 + x];
 
-	//apply_mask(temp);
-
-	return FTransform(std::move(temp));
+		return FTransform(std::move(temp));
+	}
+	return cv->convert_matrix_proto(in);
 }
 
 template<>
@@ -301,17 +310,17 @@ generated::pcl_data convert(const F_point_cloud& pcl)
 }
 
 template<>
-F_object_data convert(const generated::object_data& in)
+F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverter* cv)
 {
 	F_object_data out;
 	out.prototype_name = convert<FString>(in.prototype_name());
-	out.transform = convert<FTransform>(in.transform());
+	out.transform = convert_meta<FTransform>(in.transform(), cv);
 
 	return out;
 }
 
 template<>
-F_colored_box convert(const generated::colored_box& in)
+F_colored_box convert(const generated::Colored_Box& in)
 {
 	F_colored_box out;
 	out.box = convert<F_obb>(in.obbox());
@@ -320,8 +329,8 @@ F_colored_box convert(const generated::colored_box& in)
 	return out;
 }
 
-template<>
-F_object_instance_data convert(const generated::object_instance& in)
+/*template<>
+F_object_instance_data convert(const generated::Object_Instance& in)
 {
 	F_object_instance_data out;
 
@@ -329,17 +338,42 @@ F_object_instance_data convert(const generated::object_instance& in)
 	out.data = convert<F_object_data>(in.obj());
 
 	return out;
+}*/
+
+template<>
+F_object_instance_data convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
+{
+	F_object_instance_data out;
+
+	out.id = convert<FString>(in.id());
+	out.data = convert_meta<F_object_data>(in.obj(), cv);
+
+	return out;
 }
 
 template<>
-F_object_instance_colored_box convert(const generated::object_instance& in)
+F_object_instance_data convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	//TODO::
+	return {};
+}
+
+template<>
+F_object_instance_colored_box convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
 {
 	F_object_instance_colored_box out;
 
 	out.id = convert<FString>(in.id());
-	out.data = convert<F_colored_box>(in.box());
+	out.data = convert<F_colored_box>(in.box());//TODO:: has to be converted
 
 	return out;
+}
+
+template<>
+F_object_instance_colored_box convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	//TODO::
+	return {};
 }
 
 template<>
@@ -414,14 +448,17 @@ generated::hand_data convert(const std::pair<FXRMotionControllerData, FDateTime>
 }
 
 template<>
-F_voxel_data convert(const generated::Voxels& in)
+F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverter* cv)
 {
 	F_voxel_data res;
 	res.voxel_side_length = in.voxel_side_length();
-	res.robot_origin = convert<FTransform>(in.robot_origin());
-	res.indices = convert_array<FVector>(in.voxel_coords());
+	if (cv != nullptr)
+		res.voxel_side_length = cv->convert_scale(res.voxel_side_length);
 
-	return res;
+	res.robot_origin = convert_meta<FTransform>(in.robot_origin(), cv);
+	res.indices = convert_array_meta<FVector>(in.voxel_indices(), cv);
+
+	return res;		
 }
 
 template<>
@@ -431,49 +468,23 @@ F_voxel_data convert_meta(const generated::Voxel_TF_Meta& in, TF_Conv_Wrapper& c
 	if (in.has_transformation_meta())
 		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
 
-	const auto& voxels = in.voxels();
-
-	if (!cv.has_converter())
-		return convert<F_voxel_data>(voxels);
-
-	F_voxel_data res;
-	const auto& converter = cv.converter();
-
-	res.voxel_side_length = converter.convert_scale(voxels.voxel_side_length());
-	res.robot_origin = converter.convert_matrix_proto(voxels.robot_origin());
-
-	res.indices.Reserve(voxels.voxel_coords_size());
-	for (const auto& p : voxels.voxel_coords())
-		res.indices.Add(converter.convert_index_proto(p));
-
-	return res;
+	return convert_meta<F_voxel_data>(in.voxels(), &cv.converter());
 }
 
 template<>
-TArray<FVector> convert(const generated::Tcps& in)
+TArray<FVector> convert_meta(const generated::Tcps& in, const Transformation::TransformationConverter* cv)
 {
-	return convert_array<FVector>(in.points());
+	return convert_array_meta<FVector>(in.points(), cv);
 }
 
 template<>
 TArray<FVector> convert_meta(const generated::Tcps_TF_Meta& in, TF_Conv_Wrapper& cv)
 {
-	const auto& points = in.tcps().points();
-
 	using namespace Transformation;
 	if (in.has_transformation_meta())
 		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
 
-	if (!cv.has_converter())
-		return convert_array<FVector>(points);
-
-	TArray<FVector> out;
-	out.Reserve(points.size());
-
-	for (const auto& p : points)
-		out.Add(cv.converter().convert_point_proto(p));
-
-	return out;
+	return convert_meta<TArray<FVector>>(in.tcps(), &cv.converter());
 }
 
 template<>
@@ -485,12 +496,13 @@ TOptional<FTransform> convert(const generated::ICP_Result& in)
 	const auto& data = in.data();
 
 	if (!data.has_transformation_meta())
-		return convert<FTransform>(data.matrix());
+		return convert_meta<FTransform>(data.matrix(), nullptr);
 
 	using namespace Transformation;
-	return TransformationConverter(
+	TransformationConverter converter(
 		convert<TransformationMeta>(data.transformation_meta()), UnrealMeta
-	).convert_matrix_proto(data.matrix());
+	);
+	return convert_meta<FTransform>(data.matrix(), &converter);
 }
 
 template<>

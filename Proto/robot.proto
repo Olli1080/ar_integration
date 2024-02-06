@@ -22,7 +22,7 @@ message Joints {
 message Voxels {
 	Matrix robot_origin = 1;
 	float voxel_side_length = 2;
-	repeated vertex_3d_ui voxel_coords = 3;
+	repeated index_3d voxel_indices = 3;
 }
 
 message Tcps {

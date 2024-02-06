@@ -67,6 +67,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 	F_object_delete_delegate, const FString&, id);
 
+class TF_Conv_Wrapper;
+
 UCLASS()
 class U_object_client : public UObject, public I_Base_Client_Interface
 {
@@ -133,7 +135,7 @@ private:
 	 * processes incoming object_instances with wrappers
 	 * and emits corresponding signals
 	 */
-	void process(const generated::object_instance& instance) const;
+	void process(const generated::Object_Instance_TF_Meta& meta_instance, TF_Conv_Wrapper& wrapper) const;
 	
 	std::unique_ptr<generated::object_com::Stub> stub;
 	
