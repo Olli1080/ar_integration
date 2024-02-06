@@ -19,7 +19,7 @@
 #include <draco/point_cloud/point_cloud_builder.h>
 #include <draco/compression/point_cloud/point_cloud_kd_tree_encoder.h>
 
-#include "Math/UnitConversion.h"
+//#include "Math/UnitConversion.h"
 
 #include "TransformHelper.h"
 
