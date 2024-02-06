@@ -16,8 +16,8 @@
 #include "robot.pb.h"
 #include "grpc_include_end.h"
 
-#include <draco/point_cloud/point_cloud_builder.h>
-#include <draco/compression/point_cloud/point_cloud_kd_tree_encoder.h>
+//#include <draco/point_cloud/point_cloud_builder.h>
+//#include <draco/compression/point_cloud/point_cloud_kd_tree_encoder.h>
 
 //#include "Math/UnitConversion.h"
 
@@ -173,16 +173,16 @@ template<>
 FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverter* cv);
 
 template<>
-FVector convert(const generated::size_3d& in);
+FVector convert_meta(const generated::size_3d& in, const Transformation::TransformationConverter* cv);
 
 template<>
-FQuat convert(const generated::quaternion& in);
+FQuat convert_meta(const generated::quaternion& in, const Transformation::TransformationConverter* cv);
 
 template<>
 generated::quaternion convert(const FQuat& in);
 
 template<>
-FQuat convert(const generated::vertex_3d& in);
+FQuat convert_meta(const generated::Rotation_3d& in, const Transformation::TransformationConverter* cv);
 
 template<>
 FColor convert(const generated::color& in);
@@ -197,16 +197,22 @@ template<>
 std::string convert(const FString& in);
 
 template<>
-F_mesh_data convert(const generated::mesh_data& in);
+F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverter* cv);
 
 template<>
-FBox convert(const generated::aabb& in);
+F_mesh_data convert_meta(const generated::Mesh_Data_TF_Meta& in, TF_Conv_Wrapper& cv);
 
 template<>
-F_object_prototype convert(const generated::object_prototype& in);
+FBox convert_meta(const generated::aabb& in, const Transformation::TransformationConverter* cv);
 
 template<>
-F_obb convert(const generated::obb& in);
+F_object_prototype convert_meta(const generated::Object_Prototype& in, const Transformation::TransformationConverter* cv);
+
+template<>
+F_object_prototype convert_meta(const generated::Object_Prototype_TF_Meta& in, TF_Conv_Wrapper& cv);
+
+template<>
+F_obb convert_meta(const generated::obb& in, const Transformation::TransformationConverter* cv);
 
 template<>
 generated::size_3d convert(const FVector& in);
@@ -229,13 +235,13 @@ FTransform convert_meta(const generated::Matrix& in, const Transformation::Trans
 
 template<>
 generated::Matrix convert(const FTransform& in);
-
+/*
 template<>
 std::unique_ptr<draco::PointCloud> convert(const TArray<FVector>& in);
 
 template<>
 generated::draco_data convert(const F_point_cloud& pcl);
-
+*/
 template<>
 generated::pcl_data convert(const F_point_cloud& pcl);
 
@@ -243,7 +249,7 @@ template<>
 F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverter* cv);
 
 template<>
-F_colored_box convert(const generated::Colored_Box& in);
+F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverter* cv);
 
 /*
  * @attend precondition object_instance.has_obj() == true
@@ -264,7 +270,7 @@ template<>
 F_object_instance_colored_box convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv);
 
 template<>
-generated::vertex_3d convert(const FQuat& in);
+generated::Rotation_3d convert(const FQuat& in);
 
 template<>
 generated::aabb convert(const FBox& in);

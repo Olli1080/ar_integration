@@ -34,7 +34,7 @@ grpc::Status pcl_transmission_vertices::end_data()
 }
 
 
-
+/*
 pcl_transmission_draco::pcl_transmission_draco(std::unique_ptr<generated::pcl_com::Stub>& stub)
 	: stub(stub)
 {
@@ -57,7 +57,7 @@ grpc::Status pcl_transmission_draco::end_data()
 	stream->WritesDone();
 	return stream->Finish();
 }
-
+*/
 
 
 A_pcl_client::A_pcl_client()

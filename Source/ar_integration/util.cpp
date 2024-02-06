@@ -38,24 +38,27 @@ FVector convert_meta(const generated::index_3d& in, const Transformation::Transf
 }
 
 template<>
-FVector convert(const generated::size_3d& in)
+FVector convert_meta(const generated::size_3d& in, const Transformation::TransformationConverter* cv)
 {
-	return FVector(in.x(), in.y(), in.z());
+	if (cv == nullptr)
+		return FVector(in.x(), in.y(), in.z());
+
+	return cv->convert_size_proto(in);
 }
 
 template<>
-FQuat convert(const generated::quaternion& in)
+FQuat convert_meta(const generated::quaternion& in, const Transformation::TransformationConverter* cv)
 {
-	return FQuat(in.x(), in.y(), in.z(), in.w());
+	if (cv == nullptr)
+		return FQuat(in.x(), in.y(), in.z(), in.w());
+
+	return cv->convert_quaternion_proto(in);
 }
 
 template<>
 generated::quaternion convert(const FQuat& in)
 {
 	FQuat temp = in;
-	//temp.X *= -1;
-	//temp.W *= -1;
-
 	temp.Normalize();
 
 	generated::quaternion out;
@@ -69,17 +72,17 @@ generated::quaternion convert(const FQuat& in)
 }
 
 template<>
-FQuat convert(const generated::vertex_3d& in)
+FQuat convert_meta(const generated::Rotation_3d& in, const Transformation::TransformationConverter* cv)
 {
 	auto out = FQuat::MakeFromEuler(FVector(
-		FMath::RadiansToDegrees(in.x()),
-		FMath::RadiansToDegrees(in.y()),
-		FMath::RadiansToDegrees(in.z())));
+		FMath::RadiansToDegrees(in.roll()),
+		FMath::RadiansToDegrees(in.pitch()),
+		FMath::RadiansToDegrees(in.yaw())));
 
-	//out.X *= -1;
-	//out.W *= -1;
+	if (cv == nullptr)
+		return out;
 
-	return out;
+	return cv->convert_quaternion(out);
 }
 
 template<>
@@ -113,15 +116,15 @@ std::string convert(const FString& in)
 }
 
 template<>
-F_mesh_data convert(const generated::mesh_data& in)
+F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverter* cv)
 {
-	F_mesh_data out; //TODO::
-	out.vertices = convert_array_meta<FVector>(in.vertices(), nullptr);
+	F_mesh_data out;
+	out.vertices = convert_array_meta<FVector>(in.vertices(), cv);
 	out.indices = convert<TArray<int32>>(in.indices());
 	out.name = convert<FString>(in.name());
 
 	if (in.has_vertex_normals()) //TODO::
-		out.normals = convert_array_meta<FVector>(in.vertex_normals().vertices(), nullptr);
+		out.normals = convert_array_meta<FVector>(in.vertex_normals().vertices(), cv);
 	if (in.has_vertex_colors())
 		out.colors = convert_array<FColor>(in.vertex_colors().colors());
 
@@ -129,21 +132,31 @@ F_mesh_data convert(const generated::mesh_data& in)
 }
 
 template<>
-FBox convert(const generated::aabb& in)
+F_mesh_data convert_meta(const generated::Mesh_Data_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<F_mesh_data>(in.mesh_data(), &cv.converter());
+}
+
+template<>
+FBox convert_meta(const generated::aabb& in, const Transformation::TransformationConverter* cv)
 {
 	return FBox::BuildAABB( //TODO::
-		convert_meta<FVector>(in.translation(), nullptr),
-		convert<FVector>(in.diagonal()) / 2.f
+		convert_meta<FVector>(in.translation(), cv),
+		convert_meta<FVector>(in.diagonal(), cv) / 2.f
 	);
 }
 
 template<>
-F_object_prototype convert(const generated::object_prototype& in)
+F_object_prototype convert_meta(const generated::Object_Prototype& in, const Transformation::TransformationConverter* cv)
 {
 	F_object_prototype out;
 	out.name = convert<FString>(in.name());
 	out.mean_color = convert<FColor>(in.mean_color());
-	out.bounding_box = convert<FBox>(in.bounding_box());
+	out.bounding_box = convert_meta<FBox>(in.bounding_box(), cv);
 	out.mesh_name = convert<FString>(in.mesh_name());
 	out.type = convert<FString>(in.type());
 
@@ -151,11 +164,21 @@ F_object_prototype convert(const generated::object_prototype& in)
 }
 
 template<>
-F_obb convert(const generated::obb& in)
+F_object_prototype convert_meta(const generated::Object_Prototype_TF_Meta& in, TF_Conv_Wrapper& cv)
+{
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<F_object_prototype>(in.object_prototype(), &cv.converter());
+}
+
+template<>
+F_obb convert_meta(const generated::obb& in, const Transformation::TransformationConverter* cv)
 {
 	F_obb out;
-	out.axis_box = convert<FBox>(in.axis_aligned());
-	out.rotation = convert<FQuat>(in.rotation());
+	out.axis_box = convert_meta<FBox>(in.axis_aligned(), cv);
+	out.rotation = convert_meta<FQuat>(in.rotation(), cv);
 
 	return out;
 }
@@ -220,7 +243,6 @@ FTransform convert_meta(const generated::Matrix& in, const Transformation::Trans
 	if (cv == nullptr)
 	{
 		FMatrix temp;
-		//TODO:: use cv
 
 		if (in.rows() != 4 ||
 			in.cols() != 4 ||
@@ -255,6 +277,7 @@ generated::Matrix convert(const FTransform& in)
 	return out;
 }
 
+/*
 template<>
 std::unique_ptr<draco::PointCloud> convert(const TArray<FVector>& in)
 {
@@ -295,7 +318,7 @@ generated::draco_data convert(const F_point_cloud& pcl)
 	request.set_timestamp(pcl.abs_timestamp);
 
 	return request;
-}
+}*/
 
 template<>
 generated::pcl_data convert(const F_point_cloud& pcl)
@@ -320,10 +343,10 @@ F_object_data convert_meta(const generated::Object_Data& in, const Transformatio
 }
 
 template<>
-F_colored_box convert(const generated::Colored_Box& in)
+F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverter* cv)
 {
 	F_colored_box out;
-	out.box = convert<F_obb>(in.obbox());
+	out.box = convert_meta<F_obb>(in.obbox(), cv);
 	out.color = convert<FColor>(in.box_color());
 
 	return out;
@@ -354,8 +377,11 @@ F_object_instance_data convert_meta(const generated::Object_Instance& in, const 
 template<>
 F_object_instance_data convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
 {
-	//TODO::
-	return {};
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<F_object_instance_data>(in.object_instance(), &cv.converter());
 }
 
 template<>
@@ -364,7 +390,7 @@ F_object_instance_colored_box convert_meta(const generated::Object_Instance& in,
 	F_object_instance_colored_box out;
 
 	out.id = convert<FString>(in.id());
-	out.data = convert<F_colored_box>(in.box());//TODO:: has to be converted
+	out.data = convert_meta<F_colored_box>(in.box(), cv);//TODO:: has to be converted
 
 	return out;
 }
@@ -372,25 +398,28 @@ F_object_instance_colored_box convert_meta(const generated::Object_Instance& in,
 template<>
 F_object_instance_colored_box convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv)
 {
-	//TODO::
-	return {};
+	using namespace Transformation;
+	if (in.has_transformation_meta())
+		cv.set_source(convert<TransformationMeta>(in.transformation_meta()));
+
+	return convert_meta<F_object_instance_colored_box>(in.object_instance(), &cv.converter());
 }
 
 template<>
-generated::vertex_3d convert(const FQuat& in)
+generated::Rotation_3d convert(const FQuat& in)
 {
-	generated::vertex_3d out;
+	generated::Rotation_3d out;
 
 	FQuat cpy = in;
 
 	//cpy.X *= -1;
 	//cpy.W *= -1;
 
-	const auto& rot = cpy.Rotator().Euler();
+	const auto& rot = cpy.Rotator();
 
-	out.set_x(FMath::DegreesToRadians(rot.X));
-	out.set_y(FMath::DegreesToRadians(rot.Y));
-	out.set_z(FMath::DegreesToRadians(rot.Z));
+	out.set_roll(FMath::DegreesToRadians(rot.Roll));
+	out.set_pitch(FMath::DegreesToRadians(rot.Pitch));
+	out.set_yaw(FMath::DegreesToRadians(rot.Yaw));
 
 	return out;
 }

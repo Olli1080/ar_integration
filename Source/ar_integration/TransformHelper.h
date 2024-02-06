@@ -96,6 +96,7 @@ namespace Transformation
 		[[nodiscard]] FQuat convert_quaternion_proto(const generated::quaternion& in) const;
 		[[nodiscard]] FVector convert_point_proto(const generated::vertex_3d& in) const;
 		[[nodiscard]] FVector convert_index_proto(const generated::index_3d& in) const;
+		[[nodiscard]] FVector convert_size_proto(const generated::size_3d& in) const;
 		//[[nodiscard]] FVector convert_point_proto(const generated::vertex_3d& in) const;
 
 		[[nodiscard]] generated::Matrix convert_matrix_proto(const FTransform& in) const;

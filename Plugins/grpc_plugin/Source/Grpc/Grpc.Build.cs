@@ -358,7 +358,7 @@ public class Grpc : ModuleRules
         VcpkgPaths TargetPaths = new VcpkgPaths(mTargetTriplet, basePaths);
         
         List<string> Packages = new List<string>();
-        Packages.AddRange(new string[] { "grpc", "draco", "asio-grpc" });
+        Packages.AddRange(new string[] { "grpc", /*"draco",*/ "asio-grpc" });
 
         checkInstalled(basePaths.exe, () =>
         {

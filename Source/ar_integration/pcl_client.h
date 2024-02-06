@@ -49,7 +49,7 @@ private:
 	std::unique_ptr<generated::pcl_com::Stub>& stub;
 	std::unique_ptr<grpc::ClientWriter<generated::pcl_data>> stream;
 };
-
+/*
 class pcl_transmission_draco : public pcl_transmission
 {
 public:
@@ -65,7 +65,7 @@ private:
 
 	std::unique_ptr<generated::pcl_com::Stub>& stub;
 	std::unique_ptr<grpc::ClientWriter<generated::draco_data>> stream;
-};
+};*/
 
 /**
  * @class U_box_interface

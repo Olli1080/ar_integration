@@ -174,6 +174,21 @@ namespace Transformation
 		return out_f;
 	}
 
+	FVector TransformationConverter::convert_size_proto(const generated::size_3d& in_f) const
+	{
+		FVector out_f;
+
+		static_assert(sizeof(FVector) == 3 * sizeof(double), "Engine related code changed; Fix this!");
+
+		auto out = &out_f.X;
+		const auto in = std::to_array({ in_f.x(), in_f.y(), in_f.z() });
+
+		for (const auto& [column, row, multiplier] : assignments)
+			out[row] = in[column] * factor;
+
+		return out_f;
+	}
+
 	generated::Matrix TransformationConverter::convert_matrix_proto(const FTransform& in) const
 	{
 		return convert_proto(assignments, in, factor);

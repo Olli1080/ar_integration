@@ -33,9 +33,10 @@ bool U_mesh_client::get_meshes(
 	/**
 	 * convert and emplace meshes after stream done
 	 */
-	generated::mesh_data mesh;
+	TF_Conv_Wrapper wrapper;
+	generated::Mesh_Data_TF_Meta mesh;
 	while (stream->Read(&mesh))
-		meshes.Emplace(convert<FString>(mesh.name()), convert<F_mesh_data>(mesh));
+		meshes.Emplace(convert<FString>(mesh.mesh_data().name()), convert_meta<F_mesh_data>(mesh, wrapper));
 	
 	return stream->Finish().ok();
 }
@@ -71,11 +72,12 @@ bool U_mesh_client::get_object_prototypes(
 	/**
 	 * convert and emplace prototypes after stream done
 	 */
-	generated::object_prototype obj_proto;
+	TF_Conv_Wrapper wrapper;
+	generated::Object_Prototype_TF_Meta obj_proto;
 	while (stream->Read(&obj_proto))
 		prototypes.Emplace(
-			convert<FString>(obj_proto.name()),
-			convert<F_object_prototype>(obj_proto));
+			convert<FString>(obj_proto.object_prototype().name()),
+			convert_meta<F_object_prototype>(obj_proto, wrapper));
 
 	return stream->Finish().ok();
 }
