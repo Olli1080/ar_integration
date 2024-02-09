@@ -42,20 +42,10 @@ public:
 	bool done() const;
 
 private:
-
-	/**
-	 * ensures @ref{destroyed} is correct
-	 */
-	mutable std::mutex mtx;
-
-	/**
-	 * join_mtx ensures that the right
-	 * thread is joining @ref{thread}
-	 */
-	mutable std::mutex join_mtx;
-	bool destroyed = false;
+	
+	std::atomic_bool destroyed = false;
 	grpc::ClientContext ctx;
-	std::unique_ptr<std::thread> thread;
+	std::jthread thread;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(

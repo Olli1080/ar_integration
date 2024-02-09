@@ -3,50 +3,28 @@
 #include "util.h"
 
 stream_thread::stream_thread(std::function<void(grpc::ClientContext&)>&& f)
-{
-	thread = std::make_unique<std::thread>([this, f = std::move(f)]()
-	{
-		f(ctx);
-
-		/**
-		 * ensures that thread exits if destructor
-		 * aborted transmission
-		 */
-		std::unique_lock lock_0(join_mtx, std::defer_lock);
-		if (!lock_0.try_lock()) return;
-
-		/**
-		 * self join if f exited prior to deconstructor call
-		 */
-		std::unique_lock lock_1(mtx);
-		destroyed = true;
-		std::thread([this,
-			lock_0 = std::move(lock_0),
-			lock_1 = std::move(lock_1)]()
+	: thread([this, f = std::move(f)]()
 		{
-			thread->join();
-			thread.reset();
-		}).detach();
-	});
-}
+			f(ctx);
+			destroyed = true;
+		})
+{}
 
 stream_thread::~stream_thread()
 {
-	std::scoped_lock lock(join_mtx, mtx);
-	if (destroyed) return;
-	destroyed = true;
+	bool expected = false;
+	if (!destroyed.compare_exchange_strong(expected, true))
+		return; //destroyed was already set
 
 	/**
 	 * abort transmission
-	 * and join
+	 * and join implicitly
 	 */
 	ctx.TryCancel();
-	thread->join();
 }
 
 bool stream_thread::done() const
 {
-	std::unique_lock lock(mtx);
 	return destroyed;
 }
 
@@ -55,7 +33,6 @@ void U_object_client::async_subscribe_objects()
 	if (!channel ||
 		(subscribe_thread && !subscribe_thread->done())) return;
 
-	subscribe_thread.reset();
 	subscribe_thread = std::make_unique<stream_thread>( 
 		[this](grpc::ClientContext& ctx)
 		{
@@ -69,7 +46,6 @@ void U_object_client::async_subscribe_delete_objects()
 	if (!channel ||
 		(subscribe_delete_thread && !subscribe_delete_thread->done())) return;
 
-	subscribe_delete_thread.reset();
 	subscribe_delete_thread = std::make_unique<stream_thread>(
 		[this](grpc::ClientContext& ctx)
 		{
