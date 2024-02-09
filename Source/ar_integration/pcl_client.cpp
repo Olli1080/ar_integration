@@ -229,13 +229,12 @@ grpc::Status A_pcl_client::send_obb() const
 		const F_obb obb = I_box_interface::Execute_get_box(box_interface_obj);
 
 		grpc::ClientContext ctx;
-		google::protobuf::Empty nothing;
 
 		generated::Obb_Meta to_send;
 		*to_send.mutable_obb() = convert<generated::Obb>(obb);
 		*to_send.mutable_transformation_meta() = generate_meta();
 
-		stub->transmit_obb(&ctx, to_send, &nothing);
+		stub->transmit_obb(&ctx, to_send, {});
 	}
 	return grpc::Status::OK;
 }
