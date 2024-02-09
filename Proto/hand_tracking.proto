@@ -51,7 +51,7 @@ enum hand_key_point
   LITTLE_TIP = 25;
 } 
 
-message hand_data {
+message Hand_Data {
   bool valid = 1; 
   hand_index hand = 2; 
   tracking_status tracking_stat = 3;
@@ -66,6 +66,11 @@ message hand_data {
   int64 utc_timestamp = 12;
 }
 
+message Hand_Data_Meta {
+	Hand_Data hand_data = 1;
+	optional Transformation_Meta transformation_meta = 2;
+}
+
 service hand_tracking_com {
-  rpc transmit_hand_data (stream hand_data) returns (google.protobuf.Empty) {}
+  rpc transmit_hand_data (stream Hand_Data_Meta) returns (google.protobuf.Empty) {}
 }

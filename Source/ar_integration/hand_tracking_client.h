@@ -56,8 +56,8 @@ private:
 	std::mutex trafo_mtx;
 	FTransform local_transform;
 	
-	TCircularQueue<generated::hand_data> hand_queue = 
-		TCircularQueue<generated::hand_data>(21);
+	TCircularQueue<generated::Hand_Data> hand_queue = 
+		TCircularQueue<generated::Hand_Data>(21);
 
 	bool disconnected = false;
 

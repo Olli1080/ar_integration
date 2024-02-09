@@ -11,7 +11,7 @@ import "vertex.proto";
 import "meta_data.proto";
 
 message Colored_Box {
-	obb obbox = 1;
+	Obb obbox = 1;
 	color box_color = 2;
 }
 

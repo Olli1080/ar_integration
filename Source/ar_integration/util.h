@@ -14,6 +14,7 @@
 #include "object.pb.h"
 #include "hand_tracking.pb.h"
 #include "robot.pb.h"
+#include "meta_data.pb.h"
 #include "grpc_include_end.h"
 
 //#include <draco/point_cloud/point_cloud_builder.h>
@@ -54,6 +55,8 @@ out convert_meta(const in&, TF_Conv_Wrapper& cv);
 
 template<typename out, typename in>
 out convert_meta(const in&, const Transformation::TransformationConverter* cv = nullptr);
+
+generated::Transformation_Meta generate_meta();
 
 
 template<typename inner_out, typename inner_in>
@@ -212,7 +215,7 @@ template<>
 F_object_prototype convert_meta(const generated::Object_Prototype_TF_Meta& in, TF_Conv_Wrapper& cv);
 
 template<>
-F_obb convert_meta(const generated::obb& in, const Transformation::TransformationConverter* cv);
+F_obb convert_meta(const generated::Obb& in, const Transformation::TransformationConverter* cv);
 
 template<>
 generated::size_3d convert(const FVector& in);
@@ -243,7 +246,7 @@ template<>
 generated::draco_data convert(const F_point_cloud& pcl);
 */
 template<>
-generated::pcl_data convert(const F_point_cloud& pcl);
+generated::Pcl_Data convert(const F_point_cloud& pcl);
 
 template<>
 F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverter* cv);
@@ -276,10 +279,10 @@ template<>
 generated::aabb convert(const FBox& in);
 
 template<>
-generated::obb convert(const F_obb& in);
+generated::Obb convert(const F_obb& in);
 
 template<>
-generated::hand_data convert(const std::pair<FXRMotionControllerData, FDateTime>& in);
+generated::Hand_Data convert(const std::pair<FXRMotionControllerData, FDateTime>& in);
 
 template<>
 F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverter* cv);

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
+//using System.Net.NetworkInformation;
+//using System.Text;
 using System.Text.RegularExpressions;
 using UnrealBuildTool;
 
@@ -62,7 +62,7 @@ public class Grpc : ModuleRules
     }
 
     //private string mPluginPath;
-    private string mCorePath;
+    //private string mCorePath;
 
     //private string mVcpkgPath;
     //private string mVcpkgExe;

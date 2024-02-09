@@ -41,8 +41,7 @@ void A_franka_voxel::BeginDestroy()
 void A_franka_voxel::set_voxels(const F_voxel_data& data)
 {
 	instanced->ClearInstances();
-	auto trafo = data.robot_origin.Inverse();
-	instanced->SetRelativeTransform(trafo);
+	instanced->SetRelativeTransform(data.robot_origin.Inverse());
 	
 	for (const auto& p : data.indices)
 	{

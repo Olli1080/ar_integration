@@ -30,6 +30,7 @@ public:
 
 protected:
 
+	bool first = true;
 	grpc::ClientContext context;
 };
 
@@ -47,7 +48,7 @@ public:
 private:
 
 	std::unique_ptr<generated::pcl_com::Stub>& stub;
-	std::unique_ptr<grpc::ClientWriter<generated::pcl_data>> stream;
+	std::unique_ptr<grpc::ClientWriter<generated::Pcl_Data_Meta>> stream;
 };
 /*
 class pcl_transmission_draco : public pcl_transmission
@@ -261,6 +262,13 @@ private:
 	 * transmitted points are in meters
 	 */
 	grpc::Status send_point_clouds();
+
+	/**
+	 * @brief 
+	 * @param p point to be checked against filter
+	 * @return true if point got filtered and p is set to NAN else nothing happens
+	 */
+	bool filter_point(FVector& p) const;
 
 	/**
 	 * transmits obb (in meters) of box_interface if present

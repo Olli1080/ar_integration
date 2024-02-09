@@ -5,8 +5,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Math/TransformVectorized.h"
 #include "ARBlueprintLibrary.h"
-//#include "ARPin.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 
 #include "util.h"
 
@@ -24,7 +22,14 @@ void pcl_transmission_vertices::transmit_data(generated::ICP_Result& response)
 
 bool pcl_transmission_vertices::send_data(const F_point_cloud& pcl)
 {
-	return stream->Write(convert<generated::pcl_data>(pcl));
+	generated::Pcl_Data_Meta to_send;
+	*to_send.mutable_pcl_data() = convert<generated::Pcl_Data>(pcl);
+
+	if (first)
+		*to_send.mutable_transformation_meta() = generate_meta();
+	first = false;
+
+	return stream->Write(to_send);
 }
 
 grpc::Status pcl_transmission_vertices::end_data()
@@ -128,7 +133,6 @@ grpc::Status A_pcl_client::send_point_clouds()
 	generated::ICP_Result response;
 
 	const auto extrinsic_inv = cam->get_camera_view_matrix().Inverse();
-	constexpr float xr_scale = 100.f;
 
 	/**
 	 * initialize stream
@@ -149,60 +153,27 @@ grpc::Status A_pcl_client::send_point_clouds()
 
 		auto& [location, point_cloud] = pcl.GetValue();
 
-		FTransform trafo;
+		FTransform world_trafo;
 		/**
-		 * transform to convert point from HoloLens to global space (meters)
+		 * transform to convert point from HoloLens camera to global space
+		 * extrinsic_inv is position of sensor relative to rig
+		 * location is position of rig relative to world
 		 */
-		FTransform::Multiply(&trafo, &extrinsic_inv, &location);
-
-		bool interface_present = box_interface_obj &&
-			I_box_interface::Execute_has_box(box_interface_obj);
+		FTransform::Multiply(&world_trafo, &extrinsic_inv, &location);
 		
-		if (interface_present || voxel)
+		for (auto& p : point_cloud.data)
 		{
-			/**
-			 * transformation to convert point from HoloLens into
-			 * unreal space (unreal units)
-			 */
-			FTransform world_trafo = FTransform(trafo.GetRotation(),
-				trafo.GetTranslation() * xr_scale,
-				trafo.GetScale3D() * xr_scale);
+			p = world_trafo.TransformPosition(p);
 
-			for (auto& p : point_cloud.data)
-			{
-				const auto world_point = 
-					world_trafo.TransformPosition(p);
-
-				if (interface_present)
-				{
-					/**
-					 * Filter points from point cloud
-					 * by setting them to NAN
-					 */
-					if (!I_box_interface::Execute_is_point_in_region(
-						box_interface_obj, world_point))
-						p.Set(NAN, NAN, NAN);
-					else
-					{
-						p = trafo.TransformPosition(p);
-						if (voxel)
-							voxel->insert_point(world_point);
-					}
-				}
-				else if (voxel)
-					voxel->insert_point(world_point);
-			}
-		}
-		if (!interface_present)
-		{
-			for (auto& p : point_cloud.data)
-				p = trafo.TransformPosition(p);
+			const bool filtered = filter_point(p);
+			if (voxel && !filtered)
+				voxel->insert_point(p);
 		}
 
 		/**
 		 * return if there are no points left after filtering
 		 */
-		if (!point_cloud.data.Num())
+		if (point_cloud.data.IsEmpty())
 			continue;
 
 		/**
@@ -223,14 +194,31 @@ grpc::Status A_pcl_client::send_point_clouds()
 	 */
 	if (status.ok())
 	{
-		if (auto result = convert<TOptional<FTransform>>(response); result.IsSet())
-		{
-			//TODO:: should no longer be needed
-			//result.ScaleTranslation(xr_scale);
+		if (const auto result = convert<TOptional<FTransform>>(response); result.IsSet())
 			table_to_point_cloud = result.GetValue();
-		}
 	}
 	return status;
+}
+
+bool A_pcl_client::filter_point(FVector& p) const
+{
+	const bool interface_present = box_interface_obj &&
+		I_box_interface::Execute_has_box(box_interface_obj);
+
+	if (!interface_present)
+		return false;
+	
+	/**
+	 * Filter points from point cloud
+	 * by setting them to NAN
+	 */
+	if (!I_box_interface::Execute_is_point_in_region(
+		box_interface_obj, p))
+	{
+		p.Set(NAN, NAN, NAN);
+		return true;
+	}
+	return false;
 }
 
 grpc::Status A_pcl_client::send_obb() const
@@ -238,16 +226,16 @@ grpc::Status A_pcl_client::send_obb() const
 	if (box_interface_obj &&
 		I_box_interface::Execute_has_box(box_interface_obj))
 	{
-		constexpr float xr_scale = 100.f;
-
-		F_obb temp = I_box_interface::Execute_get_box(box_interface_obj);
-		const FBox& ab = temp.axis_box;
-		temp.axis_box = FBox::BuildAABB(ab.GetCenter() / xr_scale, ab.GetExtent() / xr_scale);
+		const F_obb obb = I_box_interface::Execute_get_box(box_interface_obj);
 
 		grpc::ClientContext ctx;
 		google::protobuf::Empty nothing;
-		
-		stub->transmit_obb(&ctx, convert<generated::obb>(temp), &nothing);
+
+		generated::Obb_Meta to_send;
+		*to_send.mutable_obb() = convert<generated::Obb>(obb);
+		*to_send.mutable_transformation_meta() = generate_meta();
+
+		stub->transmit_obb(&ctx, to_send, &nothing);
 	}
 	return grpc::Status::OK;
 }

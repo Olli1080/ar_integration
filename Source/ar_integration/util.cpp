@@ -1,5 +1,24 @@
 #include "util.h"
 
+generated::Transformation_Meta generate_meta()
+{
+	generated::Transformation_Meta out;
+
+	auto& right = *out.mutable_right();
+	right.set_axis(generated::Y);
+	right.set_direction(generated::POSITIVE);
+
+	auto& forward = *out.mutable_forward();
+	forward.set_axis(generated::X);
+	forward.set_direction(generated::POSITIVE);
+
+	auto& up = *out.mutable_up();
+	up.set_axis(generated::Z);
+	up.set_direction(generated::POSITIVE);
+
+	return out;
+}
+
 template<>
 Transformation::AxisAlignment convert(const generated::Axis_Alignment& in)
 {
@@ -158,7 +177,7 @@ F_object_prototype convert_meta(const generated::Object_Prototype_TF_Meta& in, T
 }
 
 template<>
-F_obb convert_meta(const generated::obb& in, const Transformation::TransformationConverter* cv)
+F_obb convert_meta(const generated::Obb& in, const Transformation::TransformationConverter* cv)
 {
 	F_obb out;
 	out.axis_box = convert_meta<FBox>(in.axis_aligned(), cv);
@@ -467,9 +486,9 @@ generated::draco_data convert(const F_point_cloud& pcl)
 }*/
 
 template<>
-generated::pcl_data convert(const F_point_cloud& pcl)
+generated::Pcl_Data convert(const F_point_cloud& pcl)
 {
-	generated::pcl_data request;
+	generated::Pcl_Data request;
 	request.mutable_vertices()->CopyFrom(
 		convert_array<generated::vertex_3d, true>(pcl.data));
 
@@ -508,9 +527,9 @@ generated::aabb convert(const FBox& in)
 }
 
 template<>
-generated::obb convert(const F_obb& in)
+generated::Obb convert(const F_obb& in)
 {
-	generated::obb out;
+	generated::Obb out;
 
 	*out.mutable_rotation() = convert<generated::quaternion>(in.rotation);
 	*out.mutable_axis_aligned() = convert<generated::aabb>(in.axis_box);
@@ -519,9 +538,9 @@ generated::obb convert(const F_obb& in)
 }
 
 template<>
-generated::hand_data convert(const std::pair<FXRMotionControllerData, FDateTime>& in)
+generated::Hand_Data convert(const std::pair<FXRMotionControllerData, FDateTime>& in)
 {
-	generated::hand_data out;
+	generated::Hand_Data out;
 
 	const auto& hand_data = in.first;
 

@@ -12,7 +12,7 @@ namespace Perception = winrt::Windows::Perception;
 
 template<typename out, typename in>
 out convert(const in&);
-
+/*
 template<>
 inline FMatrix convert(const Numerics::float4x4& in)
 {
@@ -22,7 +22,7 @@ inline FMatrix convert(const Numerics::float4x4& in)
         FPlane(in.m31, in.m32, in.m33, in.m34),
         FPlane(in.m41, in.m42, in.m43, in.m44));
 }
-
+*/
 template<>
 inline FTransform convert(const Numerics::float4x4& in)
 {
@@ -30,9 +30,9 @@ inline FTransform convert(const Numerics::float4x4& in)
         FPlane(in.m33, -in.m31, -in.m32, -in.m34),
         FPlane(-in.m13, in.m11, in.m12, in.m14),
         FPlane(-in.m23, in.m21, in.m22, in.m24),
-        FPlane(-in.m43, in.m41, in.m42, in.m44)));
+        FPlane(-in.m43 * 100.f, in.m41 * 100.f, in.m42 * 100.f, in.m44)));
 }
-
+/*
 template<>
 inline FMatrix convert(const DirectX::XMFLOAT4X4& in)
 {
@@ -42,7 +42,7 @@ inline FMatrix convert(const DirectX::XMFLOAT4X4& in)
         FPlane(in._31, in._32, in._33, in._34),
         FPlane(in._41, in._42, in._43, in._44));
 }
-
+*/
 template<>
 inline FTransform convert(const DirectX::XMFLOAT4X4& in)
 {
@@ -50,7 +50,7 @@ inline FTransform convert(const DirectX::XMFLOAT4X4& in)
         FPlane(in._33, -in._31, -in._32, -in._34),
         FPlane(-in._13, in._11, in._12, in._14),
         FPlane(-in._23, in._21, in._22, in._24),
-        FPlane(-in._43, in._41, in._42, in._44)));
+        FPlane(-in._43 * 100.f, in._41 * 100.f, in._42 * 100.f, in._44)));
 }
 
 template<>

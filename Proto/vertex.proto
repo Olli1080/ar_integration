@@ -80,7 +80,7 @@ message aabb {
 	vertex_3d translation = 2;
 }
 
-message obb {
+message Obb {
 	aabb axis_aligned = 1;
 	quaternion rotation = 2;
 }
@@ -107,6 +107,11 @@ message Mesh_Data_TF_Meta
 
 message Vertex_3D_Meta {
 	vertex_3d vertex = 1;
+	optional Transformation_Meta transformation_meta = 2;
+}
+
+message Obb_Meta {
+	Obb obb = 1;
 	optional Transformation_Meta transformation_meta = 2;
 }
 

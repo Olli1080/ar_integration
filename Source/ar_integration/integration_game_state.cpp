@@ -8,8 +8,6 @@ struct Overload : Ts ... {
 };
 template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
-//static constexpr float xr_factor = 100.f;
-
 A_integration_game_state::A_integration_game_state()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -328,12 +326,6 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			 * calculate the actor transform
 			 */
 			trafo = data.transform;
-			//TODO:: check if no needed anymore
-			/*trafo.ScaleTranslation(xr_factor);
-			trafo.SetScale3D(
-				trafo.GetScale3D() *
-				prototype->bounding_box.GetExtent() *
-				xr_factor);*/
 
 			/**
 			 * bind actor post constructor function
@@ -355,11 +347,6 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 				box.rotation,
 				box.axis_box.GetCenter(),
 				box.axis_box.GetExtent());
-
-			/*trafo = FTransform(
-				box.rotation,
-				box.axis_box.GetCenter() * xr_factor,
-				box.axis_box.GetExtent() * xr_factor);*/
 
 			/**
 			 * bind actor post constructor function

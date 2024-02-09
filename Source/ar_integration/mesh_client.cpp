@@ -6,7 +6,7 @@ bool U_mesh_client::get_meshes(
 	const TArray<FString>& requests,
 	TMap<FString, F_mesh_data>& meshes)
 {
-	if (!channel || !channel->channel || requests.Num() == 0) return false;
+	if (!channel || !channel->channel || requests.IsEmpty()) return false;
 
 	/**
 	 * setup stream context and data
@@ -45,7 +45,7 @@ bool U_mesh_client::get_object_prototypes(
 	const TArray<FString>& requests,
 	TMap<FString, F_object_prototype>& prototypes)
 {
-	if (!channel || !channel->channel || requests.Num() == 0) return false;
+	if (!channel || !channel->channel || requests.IsEmpty()) return false;
 
 	/**
 	 * setup stream context and data
