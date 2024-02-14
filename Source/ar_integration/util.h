@@ -167,6 +167,9 @@ template<>
 Transformation::AxisAlignment convert(const generated::Axis_Alignment& in);
 
 template<>
+Transformation::Ratio convert(const generated::Ratio& in);
+
+template<>
 Transformation::TransformationMeta convert(const generated::Transformation_Meta& in);
 
 template<>

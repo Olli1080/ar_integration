@@ -16,6 +16,10 @@ generated::Transformation_Meta generate_meta()
 	up.set_axis(generated::Z);
 	up.set_direction(generated::POSITIVE);
 
+	auto& scale = *out.mutable_scale();
+	scale.set_num(1);
+	scale.set_denom(100);
+
 	return out;
 }
 
@@ -29,12 +33,22 @@ Transformation::AxisAlignment convert(const generated::Axis_Alignment& in)
 }
 
 template<>
+Transformation::Ratio convert(const generated::Ratio& in)
+{
+	return {
+		in.num(),
+		in.denom()
+	};
+}
+
+template<>
 Transformation::TransformationMeta convert(const generated::Transformation_Meta& in)
 {
 	return {
 		convert<Transformation::AxisAlignment>(in.right()),
 		convert<Transformation::AxisAlignment>(in.forward()),
-		convert<Transformation::AxisAlignment>(in.up())
+		convert<Transformation::AxisAlignment>(in.up()),
+		convert<Transformation::Ratio>(in.scale())
 	};
 }
 

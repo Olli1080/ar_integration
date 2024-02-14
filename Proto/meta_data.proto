@@ -25,9 +25,16 @@ message Axis_Alignment
     Axis_Direction direction = 2;
 }
 
+message Ratio
+{
+    int64 Num = 1;
+    int64 Denom = 2;
+}
+
 message Transformation_Meta
 {
     Axis_Alignment right = 1;
     Axis_Alignment forward = 2;
     Axis_Alignment up = 3;
+    Ratio scale = 4;
 }

@@ -104,7 +104,7 @@ namespace Transformation
 		[[nodiscard]] generated::vertex_3d convert_point_proto(const FVector& in) const;
 
 
-		float convert_scale(float scale) const;
+		[[nodiscard]] float convert_scale(float scale) const;
 
 	private:
 
