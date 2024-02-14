@@ -4,7 +4,6 @@
 #include <ratio>
 #include <tuple>
 #include <array>
-#include <concepts>
 
 #include "Math/Vector.h"
 #include "Math/TransformVectorized.h"

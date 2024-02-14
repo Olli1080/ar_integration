@@ -151,10 +151,11 @@ void A_integration_game_state::change_channel(FString target)
 		sync_and_subscribe();
 		hand_tracking_client->update_local_transform(anchor_pin->GetLocalToWorldTransform().Inverse());
 		hand_tracking_client->async_transmit_data();
+
+		franka_client->async_transmit_data();
+		//franka_tcp_client->async_transmit_data();
+		//franka_joint_client->async_transmit_data();
 	}
-	franka_client->async_transmit_data();
-	franka_tcp_client->async_transmit_data();
-	franka_joint_client->async_transmit_data();
 
 	on_channel_change.Broadcast(channel);
 }

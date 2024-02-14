@@ -19,6 +19,11 @@ stream_thread::~stream_thread()
 	 * and join implicitly
 	 */
 	ctx.TryCancel();
+
+#if __cplusplus < 202002L
+	if (thread.joinable())
+		thread.join();
+#endif
 }
 
 bool stream_thread::done() const

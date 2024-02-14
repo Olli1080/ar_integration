@@ -1,5 +1,23 @@
 #include "TransformHelper.h"
 
+#if __cplusplus < 202002L
+namespace detail
+{
+	template<class T, std::size_t N, std::size_t... I>
+	constexpr std::array<std::remove_cv_t<T>, N>
+		to_array_impl(T(&& a)[N], std::index_sequence<I...>)
+	{
+		return { {std::move(a[I])...} };
+	}
+}
+
+template<class T, std::size_t N>
+constexpr std::array<std::remove_cv_t<T>, N> to_array(T(&& a)[N])
+{
+	return detail::to_array_impl(std::move(a), std::make_index_sequence<N>{});
+}
+#endif
+
 namespace Transformation
 {
 	TransformationMeta::TransformationMeta(AxisAlignment right, AxisAlignment forward, AxisAlignment up,
@@ -136,7 +154,9 @@ namespace Transformation
 		static_assert(sizeof(FQuat) == 4 * sizeof(double), "Engine related code changed; Fix this!");
 
 		auto coeffs = &out.X;
-		const auto in_c = std::to_array<float>({ in.x(), in.y(), in.z() });
+
+		using namespace std;
+		const auto in_c = to_array<float>({ in.x(), in.y(), in.z() });
 
 		for (const auto& [column, row, multiplier] : assignments)
 			coeffs[row] = in_c[column] * multiplier;
@@ -151,7 +171,9 @@ namespace Transformation
 		static_assert(sizeof(FVector) == 3 * sizeof(double), "Engine related code changed; Fix this!");
 
 		auto out = &out_f.X;
-		const auto in = std::to_array({ in_f.x(), in_f.y(), in_f.z()});
+
+		using namespace std;
+		const auto in = to_array({ in_f.x(), in_f.y(), in_f.z()});
 
 		for (const auto& [column, row, multiplier] : assignments)
 			out[row] = in[column] * factor * multiplier;
@@ -166,7 +188,9 @@ namespace Transformation
 		static_assert(sizeof(FVector) == 3 * sizeof(double), "Engine related code changed; Fix this!");
 
 		auto out = &out_f.X;
-		const auto in = std::to_array({ in_f.x(), in_f.y(), in_f.z() });
+
+		using namespace std;
+		const auto in = to_array({ in_f.x(), in_f.y(), in_f.z() });
 
 		for (const auto& [column, row, multiplier] : assignments)
 			out[row] = static_cast<float>(in[column]) * multiplier;
@@ -181,7 +205,9 @@ namespace Transformation
 		static_assert(sizeof(FVector) == 3 * sizeof(double), "Engine related code changed; Fix this!");
 
 		auto out = &out_f.X;
-		const auto in = std::to_array({ in_f.x(), in_f.y(), in_f.z() });
+
+		using namespace std;
+		const auto in = to_array({ in_f.x(), in_f.y(), in_f.z() });
 
 		for (const auto& [column, row, multiplier] : assignments)
 			out[row] = in[column] * factor;
@@ -205,7 +231,8 @@ namespace Transformation
 
 		static_assert(sizeof(FQuat) == 4 * sizeof(double), "Engine related code changed; Fix this!");
 
-		auto coeffs = std::to_array({
+		using namespace std;
+		auto coeffs = to_array({
 			&generated::quaternion::set_x,
 			&generated::quaternion::set_y,
 			&generated::quaternion::set_z,
@@ -224,7 +251,8 @@ namespace Transformation
 
 		static_assert(sizeof(FVector) == 3 * sizeof(double), "Engine related code changed; Fix this!");
 
-		auto out = std::to_array({
+		using namespace std;
+		auto out = to_array({
 			&generated::vertex_3d::set_x,
 			&generated::vertex_3d::set_y,
 			&generated::vertex_3d::set_z,
