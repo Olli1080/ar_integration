@@ -7,7 +7,7 @@ public class ar_integration : ModuleRules
 	public ar_integration(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		CppStandard = CppStandardVersion.Cpp20;
+		CppStandard = CppStandardVersion.Cpp17; //C++20 not allowed with uwp
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 

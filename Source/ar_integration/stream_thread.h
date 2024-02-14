@@ -36,5 +36,10 @@ private:
 
 	std::atomic_bool destroyed = false;
 	grpc::ClientContext ctx;
+
+#if __cplusplus >= 202002L
 	std::jthread thread;
+#else
+	std::thread thread;
+#endif
 };

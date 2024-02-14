@@ -2,7 +2,6 @@
 
 #include <string>
 #include <cmath>
-#include <numbers>
 
 #include "TransformHelper.h"
 
@@ -23,7 +22,7 @@ static inline Transformation::TransformationMeta DHMeta(
 
 static inline Transformation::TransformationConverter dh_2_UE{ DHMeta, Transformation::UnrealMeta };
 
-static inline float PI_2 = std::numbers::pi_v<float> / 2.f;
+static inline float PI_2 = UE_PI / 2.f;
 
 static FRobot generateFrankaBlueprint()
 {

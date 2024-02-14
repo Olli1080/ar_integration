@@ -440,8 +440,7 @@ public class Grpc : ModuleRules
             "Core"
         });
 
-        if (Target.Platform == UnrealTargetPlatform.Win64)
-            PublicSystemLibraries.Add("crypt32.lib");
+        PublicSystemLibraries.Add("crypt32.lib");
 
         PrivateDependencyModuleNames.AddRange(new string[] { "CoreUObject", "Engine" });
     }
