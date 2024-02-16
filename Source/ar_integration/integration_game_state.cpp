@@ -167,16 +167,13 @@ void A_integration_game_state::spawn_obj_proto(const FString& name)
 	
 	const auto mesh = meshes.Find(prototype->mesh_name);
 	if (!mesh) return;
-	
-	const auto& scale = prototype->bounding_box.GetExtent() *
-		UHeadMountedDisplayFunctionLibrary::GetWorldToMetersScale(GetWorld());
 
 	FActorSpawnParameters spawnParams;
 	spawnParams.bNoFail = true;
 		
 	const auto newActor = GetWorld()->SpawnActor<A_procedural_mesh_actor>(
 		A_procedural_mesh_actor::StaticClass(), 
-		FTransform(FQuat::Identity, FVector::ZeroVector, scale),
+		FTransform(FQuat::Identity, FVector::ZeroVector, prototype->bounding_box.GetExtent()),
 		spawnParams);
 	
 	newActor->set_from_data(create_proc_mesh_data(*prototype, *mesh));
