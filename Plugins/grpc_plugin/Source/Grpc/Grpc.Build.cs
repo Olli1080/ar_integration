@@ -423,11 +423,12 @@ public class Grpc : ModuleRules
             if (i % 10 != 0)
                 Console.WriteLine("]");
         }
-        //Console.WriteLine();
+        
+        Console.WriteLine("Dlls:");
         foreach (string Dll in Ressources.dlls)
         {
             string DllFilePath = Path.Combine(TargetPaths.bin, Dll);
-            //Console.Write("\n" + Path.GetFileNameWithoutExtension(DllFilePath) + " ");
+            Console.Write("\n" + Path.GetFileNameWithoutExtension(DllFilePath) + " ");
             RuntimeDependencies.Add("$(TargetOutputDir)/" + Dll, DllFilePath);
         }
         //Console.WriteLine();

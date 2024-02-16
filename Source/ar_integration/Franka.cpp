@@ -240,14 +240,22 @@ AFranka::AFranka()
 	tcpComp->SetupAttachment(structure.Last());
 	tcpComp->SetRelativeTransform(blueprint.tcp.transform);
 
-	coord_blueprint = ConstructorHelpers::FObjectFinder<UBlueprint>(TEXT("/Script/Engine.Blueprint'/Game/coord_frame_2.coord_frame_2'")).Object->GeneratedClass;
-	//blueprint.tcp.transform
+	const auto find_gen_class = StaticLoadClass(UObject::StaticClass(), nullptr, TEXT("/Script/Engine.Blueprint'/Game/coord_frame_2.coord_frame_2_C'"));
+	if (!find_gen_class)
+		return;
+	const auto gen_class = Cast<UBlueprintGeneratedClass>(find_gen_class);
+	if (!gen_class)
+		return;
+	coord_blueprint = gen_class;
 }
 
 // Wird aufgerufen, wenn das Spiel beginnt oder wenn es gespawnt wird
 void AFranka::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!coord_blueprint)
+		return;
 
 	if (spawned)
 		return;
