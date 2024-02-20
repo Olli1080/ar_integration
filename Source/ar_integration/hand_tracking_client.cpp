@@ -63,8 +63,9 @@ void A_hand_tracking_client::async_transmit_data()
 			grpc::ClientContext ctx;
 			ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 			
+			google::protobuf::Empty empty;
 			const auto stream = 
-				stub->transmit_hand_data(&ctx, {});
+				stub->transmit_hand_data(&ctx, &empty);
 			stream->WaitForInitialMetadata();
 
 			bool first = true;

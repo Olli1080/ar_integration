@@ -45,8 +45,9 @@ void U_object_client::state_change_Implementation(connection_state old_state, co
 
 grpc::Status U_object_client::subscribe_objects(grpc::ClientContext& ctx) const
 {
+	google::protobuf::Empty empty;
 	auto stream =
-		stub->transmit_object(&ctx, {});
+		stub->transmit_object(&ctx, empty);
 	stream->WaitForInitialMetadata();
 
 	TF_Conv_Wrapper wrapper;
@@ -58,7 +59,8 @@ grpc::Status U_object_client::subscribe_objects(grpc::ClientContext& ctx) const
 
 grpc::Status U_object_client::subscribe_delete_objects(grpc::ClientContext& ctx) const
 {
-	auto stream = stub->delete_object(&ctx, {});
+	google::protobuf::Empty empty;
+	auto stream = stub->delete_object(&ctx, empty);
 	stream->WaitForInitialMetadata();
 
 	generated::Delete_Request req;
@@ -71,8 +73,9 @@ void U_object_client::sync_objects()
 {
 	if (!channel) return;
 
+	google::protobuf::Empty empty;
 	grpc::ClientContext ctx;
-	auto stream = stub->sync_objects(&ctx, {});
+	auto stream = stub->sync_objects(&ctx, empty);
 	stream->WaitForInitialMetadata();
 
 	TF_Conv_Wrapper wrapper;

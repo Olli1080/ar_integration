@@ -31,8 +31,9 @@ void U_franka_client::async_transmit_data()
 			ctx = std::make_unique<grpc::ClientContext>();
 			ctx->set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
+			google::protobuf::Empty empty;
 			const auto stream =
-				stub->transmit_voxels(ctx.get(), {});
+				stub->transmit_voxels(ctx.get(), empty);
 			stream->WaitForInitialMetadata();
 
 			TF_Conv_Wrapper tf_wrapper;
@@ -125,9 +126,10 @@ void U_franka_tcp_client::async_transmit_data()
 
 			ctx = std::make_unique<grpc::ClientContext>();
 			ctx->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-			
+
+			google::protobuf::Empty empty;
 			const auto stream =
-				stub->transmit_tcps(ctx.get(), {});
+				stub->transmit_tcps(ctx.get(), empty);
 			stream->WaitForInitialMetadata();
 
 			TF_Conv_Wrapper tf_wrapper;
@@ -218,8 +220,9 @@ void U_franka_joint_client::async_transmit_data()
 			ctx = std::make_unique<grpc::ClientContext>();
 			ctx->set_compression_algorithm(GRPC_COMPRESS_GZIP);
 			
+			google::protobuf::Empty empty;
 			const auto stream =
-				stub->transmit_joints(ctx.get(), {});
+				stub->transmit_joints(ctx.get(), empty);
 			stream->WaitForInitialMetadata();
 
 			while (status == franka_client_status::RUNNING)

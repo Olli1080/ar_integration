@@ -234,7 +234,8 @@ grpc::Status A_pcl_client::send_obb() const
 		*to_send.mutable_obb() = convert<generated::Obb>(obb);
 		*to_send.mutable_transformation_meta() = generate_meta();
 
-		stub->transmit_obb(&ctx, to_send, {});
+		google::protobuf::Empty empty;
+		stub->transmit_obb(&ctx, to_send, &empty);
 	}
 	return grpc::Status::OK;
 }
@@ -367,7 +368,7 @@ void A_pcl_client::Tick(float DeltaTime)
 
 	if (current_state != state::INIT) return;
 	
-	if (UARBlueprintLibrary::GetARSessionStatus().Status == 
+	if (UARBlueprintLibrary::GetARSessionStatus().Status ==
 		EARSessionStatus::Running && channel)
 	{
 		set_state(state::READY);
