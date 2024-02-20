@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(PLATFORM_HOLOLENS) || defined(PLATFORM_WINDOWS)
+#if PLATFORM_HOLOLENS || PLATFORM_WINDOWS
 #define PLATFORMS 1
 #endif
 

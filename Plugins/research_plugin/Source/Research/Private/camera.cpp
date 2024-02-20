@@ -50,7 +50,7 @@ void A_camera::Tick(float DeltaSeconds)
 void A_camera::BeginDestroy()
 {
 #if (PLATFORMS)
-#if (!defined(PLATFORM_HOLOLENS) && !defined(__PARSER__))
+#if (!PLATFORM_HOLOLENS && !defined(__PARSER__))
     Super::BeginDestroy();
     return;
 #endif	
@@ -130,7 +130,7 @@ bool A_camera::is_supported()
 void A_camera::init(threading threading_type)
 {
 #if (PLATFORMS)
-#if (!defined(PLATFORM_HOLOLENS) && !defined(__PARSER__))
+#if (!PLATFORM_HOLOLENS && !defined(__PARSER__))
     //allows auto completion
     return;
 #endif
