@@ -391,7 +391,8 @@ TArray<FVector> A_camera::process(
         	
             auto vertex = FVector(xy[0], xy[1], 1.f);
             vertex.Normalize();
-            vertex *= (static_cast<float>(depth[index]) / 1000.f);
+            //depth[index] is in mm
+            vertex *= (static_cast<float>(depth[index]) / 10.f);
         	
             out.Add(FVector(-vertex.Z, vertex.X, vertex.Y));
         }
