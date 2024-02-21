@@ -32,7 +32,7 @@ static FRobot generateFrankaBlueprint()
 	auto& links = robot.links;
 	auto& tcp = robot.tcp;
 
-	base.transform = FTransform::Identity;
+	base.transform = FTransform(FQuat(FVector(0., 0., 1.), PI_2));
 	base.meshData.Add({ TEXT("/Script/Engine.StaticMesh'/Game/Franka/Base_white.Base_white'"), EColorFranka::WHITE });
 	base.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Base_dark.Base_dark'"), EColorFranka::DARK});
 

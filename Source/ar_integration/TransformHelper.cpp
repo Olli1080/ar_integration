@@ -76,7 +76,7 @@ namespace Transformation
 		return !isRightHanded();
 	}
 
-	FTransform TransformationConverter::get_conv_matrix(const TransformationMeta& target) const
+	FTransform TransformationConverter::get_conv_matrix() const
 	{
 		FMatrix matrix;
 		auto& M = matrix.M;

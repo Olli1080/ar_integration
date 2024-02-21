@@ -85,7 +85,7 @@ namespace Transformation
 
 		TransformationConverter(const TransformationMeta& origin, const TransformationMeta& target);
 
-		[[nodiscard]] FTransform get_conv_matrix(const TransformationMeta& target) const;
+		[[nodiscard]] FTransform get_conv_matrix() const;
 
 		[[nodiscard]] FTransform convert_matrix(const FTransform& in) const;
 		[[nodiscard]] FQuat convert_quaternion(const FQuat& in) const;
