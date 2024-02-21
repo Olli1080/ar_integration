@@ -136,12 +136,12 @@ template<>
 F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverter* cv)
 {
 	F_mesh_data out;
-	out.vertices = convert_array_meta<FVector>(in.vertices(), cv);
+	out.vertices = convert_array_meta<FVector>(in.vertices(), nullptr);
 	out.indices = convert<TArray<int32>>(in.indices());
 	out.name = convert<FString>(in.name());
 
-	if (in.has_vertex_normals()) //TODO::
-		out.normals = convert_array_meta<FVector>(in.vertex_normals().vertices(), cv);
+	if (in.has_vertex_normals()) //TODO:: remove conversion
+		out.normals = convert_array_meta<FVector>(in.vertex_normals().vertices(), nullptr);
 	if (in.has_vertex_colors())
 		out.colors = convert_array<FColor>(in.vertex_colors().colors());
 
@@ -161,7 +161,7 @@ F_mesh_data convert_meta(const generated::Mesh_Data_TF_Meta& in, TF_Conv_Wrapper
 template<>
 FBox convert_meta(const generated::aabb& in, const Transformation::TransformationConverter* cv)
 {
-	return FBox::BuildAABB( //TODO::
+	return FBox::BuildAABB( 
 		convert_meta<FVector>(in.translation(), cv),
 		convert_meta<FVector>(in.diagonal(), cv) / 2.f
 	);
@@ -296,7 +296,7 @@ F_object_instance_colored_box convert_meta(const generated::Object_Instance& in,
 	F_object_instance_colored_box out;
 
 	out.id = convert<FString>(in.id());
-	out.data = convert_meta<F_colored_box>(in.box(), cv);//TODO:: has to be converted
+	out.data = convert_meta<F_colored_box>(in.box(), cv);
 
 	return out;
 }

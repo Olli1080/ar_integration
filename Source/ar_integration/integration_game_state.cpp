@@ -42,6 +42,13 @@ void A_integration_game_state::BeginPlay()
 	franka_voxel = GetWorld()->SpawnActor<A_franka_voxel>(params);
 	franka_tcps = GetWorld()->SpawnActor<A_franka_tcps>(params);
 	franka = GetWorld()->SpawnActor<AFranka>(params);
+	
+	franka_voxel->AttachToComponent(pin_component,
+		FAttachmentTransformRules::KeepRelativeTransform);
+	franka_tcps->AttachToComponent(pin_component,
+		FAttachmentTransformRules::KeepRelativeTransform);
+	franka->AttachToComponent(pin_component,
+		FAttachmentTransformRules::KeepRelativeTransform);
 
 	franka_client->on_voxel_data.AddDynamic(this, &A_integration_game_state::handle_voxels);
 	franka_tcp_client->on_tcp_data.AddDynamic(this, &A_integration_game_state::handle_tcps);
