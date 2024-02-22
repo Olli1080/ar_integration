@@ -22,9 +22,13 @@ struct SAnchorMSFT
 
 #if (PLATFORM_HOLOLENS)
 extern "C"
-HMODULE LoadLibraryA(
-    LPCSTR lpLibFileName
-);
+WINBASEAPI
+_Ret_maybenull_
+HMODULE
+WINAPI
+LoadLibraryA(
+    _In_ LPCSTR lpLibFileName
+    );
 #endif
 
 #if (PLATFORMS)

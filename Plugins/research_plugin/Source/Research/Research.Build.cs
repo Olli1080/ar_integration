@@ -38,7 +38,7 @@ public class Research : ModuleRules
 
     public Research(ReadOnlyTargetRules Target) : base(Target)
     {
-        CppStandard = CppStandardVersion.Cpp17;
+        CppStandard = CppStandardVersion.Cpp20;
         PublicDependencyModuleNames.AddRange(new string[] {
             "Core", "CoreUObject", "GeometryCore", "Engine", "AugmentedReality"
         });
@@ -54,8 +54,8 @@ public class Research : ModuleRules
             // these parameters mandatory for winrt support
             bEnableExceptions = true;
             bUseUnity = false;
-            CppStandard = CppStandardVersion.Cpp17;
-            PublicSystemLibraries.AddRange(new string[] { "shlwapi.lib", "runtimeobject.lib" });
+            CppStandard = CppStandardVersion.Cpp20;
+            /*PublicSystemLibraries.AddRange(new string[] { "shlwapi.lib", "runtimeobject.lib" });
 
             // prepare everything for nuget
             string MyModuleName = GetType().Name;
@@ -123,15 +123,6 @@ public class Research : ModuleRules
                 string CppWinRTFolder = Path.Combine(PluginDirectory, "Intermediate", CppWinRTName, MyModuleName);
                 Directory.CreateDirectory(CppWinRTFolder);
 
-                /*// generate winrt headers and add them into include paths
-                var StartInfo = new System.Diagnostics.ProcessStartInfo(CppWinRTExe, string.Format("-input \"{0}\" -output \"{1}\"", Target.WindowsPlatform.WindowsSdkVersion, CppWinRTFolder));
-                StartInfo.UseShellExecute = false;
-                StartInfo.CreateNoWindow = true;
-                var ExitCode = Utils.RunLocalProcessAndPrintfOutput(StartInfo);
-                if (ExitCode < 0)
-                {
-                    throw new BuildException("Failed to get generate WinRT headers.  See log for details.");
-                }*/
 
 // generate winrt headers and add them into include paths
                 Utils.RunLocalProcessAndReturnStdOut(CppWinRTExe,
@@ -147,7 +138,7 @@ public class Research : ModuleRules
             {
                 // fall back to default WinSDK headers if no winrt package in our list
                 PublicIncludePaths.Add(Path.Combine(Target.WindowsPlatform.WindowsSdkDir, "Include", Target.WindowsPlatform.WindowsSdkVersion, "cppwinrt"));
-            }
+            }*/
         }
     }
 }
