@@ -59,6 +59,16 @@ message vertex_3d_array {
 	repeated vertex_3d vertices = 1;
 }
 
+message vertex_3d_no_scale {
+	float x = 1;
+	float y = 2;
+	float z = 3;
+}
+
+message vertex_3d_array_no_scale {
+	repeated vertex_3d vertices = 1;
+}
+
 message vertex_4d_array {
 	repeated vertex_4d vertices = 1;
 }
@@ -68,10 +78,10 @@ message color_array {
 }
 
 message Mesh_Data {
-	repeated vertex_3d vertices = 1;
+	repeated vertex_3d_no_scale vertices = 1;
 	repeated uint32 indices = 2;
 	string name = 3;
-	optional vertex_3d_array vertex_normals = 4;
+	optional vertex_3d_array_no_scale vertex_normals = 4;
 	optional color_array vertex_colors = 5;
 }
 

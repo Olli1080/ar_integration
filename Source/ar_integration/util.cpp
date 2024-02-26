@@ -62,6 +62,15 @@ FVector convert_meta(const generated::vertex_3d& in, const Transformation::Trans
 }
 
 template<>
+FVector convert_meta(const generated::vertex_3d_no_scale& in, const Transformation::TransformationConverter* cv)
+{
+	if (cv == nullptr)
+		return FVector(in.x(), in.y(), in.z());
+
+	return cv->convert_point_proto(in);
+}
+
+template<>
 FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverter* cv)
 {
 	if (cv == nullptr)
@@ -136,12 +145,12 @@ template<>
 F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverter* cv)
 {
 	F_mesh_data out;
-	out.vertices = convert_array_meta<FVector>(in.vertices(), nullptr);
+	out.vertices = convert_array_meta<FVector>(in.vertices(), cv);
 	out.indices = convert<TArray<int32>>(in.indices());
 	out.name = convert<FString>(in.name());
 
-	if (in.has_vertex_normals()) //TODO:: remove conversion
-		out.normals = convert_array_meta<FVector>(in.vertex_normals().vertices(), nullptr);
+	if (in.has_vertex_normals())
+		out.normals = convert_array_meta<FVector>(in.vertex_normals().vertices(), cv);
 	if (in.has_vertex_colors())
 		out.colors = convert_array<FColor>(in.vertex_colors().colors());
 

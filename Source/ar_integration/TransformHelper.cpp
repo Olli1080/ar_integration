@@ -181,6 +181,23 @@ namespace Transformation
 		return out_f;
 	}
 
+	FVector TransformationConverter::convert_point_proto(const generated::vertex_3d_no_scale& in_f) const
+	{
+		FVector out_f;
+
+		static_assert(sizeof(FVector) == 3 * sizeof(double), "Engine related code changed; Fix this!");
+
+		auto out = &out_f.X;
+
+		using namespace std;
+		const auto in = to_array({ in_f.x(), in_f.y(), in_f.z() });
+
+		for (const auto& [column, row, multiplier] : assignments)
+			out[row] = in[column] * multiplier;
+
+		return out_f;
+	}
+
 	FVector TransformationConverter::convert_index_proto(const generated::index_3d& in_f) const
 	{
 		FVector out_f;

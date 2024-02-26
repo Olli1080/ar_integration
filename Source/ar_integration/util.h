@@ -176,6 +176,9 @@ template<>
 FVector convert_meta(const generated::vertex_3d& in, const Transformation::TransformationConverter* cv);
 
 template<>
+FVector convert_meta(const generated::vertex_3d_no_scale& in, const Transformation::TransformationConverter* cv);
+
+template<>
 FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverter* cv);
 
 template<>
