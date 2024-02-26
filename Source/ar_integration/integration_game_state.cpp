@@ -330,7 +330,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			/**
 			 * calculate the actor transform
 			 */
-			trafo = data.transform;
+			trafo = data.transform.GetScaled(prototype->bounding_box.GetExtent());
 
 			/**
 			 * bind actor post constructor function
