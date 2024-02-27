@@ -35,7 +35,7 @@ void A_integration_game_state::BeginPlay()
 	params.bNoFail = true;
 
 	pcl_client = GetWorld()->SpawnActor<A_pcl_client>(params);
-	pcl_client->visualize = false;
+	//pcl_client->visualize = false;
 
 	hand_tracking_client = GetWorld()->SpawnActor<A_hand_tracking_client>(params);
 
