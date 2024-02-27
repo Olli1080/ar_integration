@@ -345,7 +345,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			f = [this, data = create_proc_mesh_data(*prototype, *mesh)]
 			(A_procedural_mesh_actor* actor)
 				{
-					actor->set_from_data(std::move(data));
+					actor->set_from_data(data);
 				};
 			return false;
 		},
@@ -366,7 +366,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			f = [this, actor_color = FLinearColor(color)]
 			(A_procedural_mesh_actor* actor)
 				{
-					actor->wireframe(std::move(actor_color));
+					actor->wireframe(actor_color);
 				};
 
 			return false;
