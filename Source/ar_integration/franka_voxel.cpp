@@ -16,6 +16,9 @@ A_franka_voxel::A_franka_voxel()
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
 		TEXT("Material'/Game/voxel_material_opaque.voxel_material_opaque'")).Object;
 
+	auto root = CreateDefaultSubobject<USceneComponent>("pin_component");
+	SetRootComponent(root);
+
 	/**
 	 * setup instanced mesh component
 	 */
@@ -26,6 +29,9 @@ A_franka_voxel::A_franka_voxel()
 	instanced->SetMaterial(0, mat);
 	instanced->SetMobility(EComponentMobility::Movable);
 	this->AddInstanceComponent(instanced);
+
+	instanced->AttachToComponent(root,
+		FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void A_franka_voxel::Tick(float DeltaSeconds)
@@ -41,7 +47,7 @@ void A_franka_voxel::BeginDestroy()
 void A_franka_voxel::set_voxels(const F_voxel_data& data)
 {
 	instanced->ClearInstances();
-	instanced->SetRelativeTransform(data.robot_origin.Inverse());
+	instanced->SetRelativeTransform(data.robot_origin.Inverse() * FTransform(FQuat(FVector(0., 0., 1.), UE_PI / 2.f)));
 	
 	for (const auto& p : data.indices)
 	{
