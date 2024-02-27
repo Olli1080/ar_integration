@@ -63,6 +63,8 @@ void A_voxel::insert(const TArray<FVector>& points)
 		std::unique_lock lock(voxel_mtx);
 		for (const auto& p : points)
 		{
+			if (p.ContainsNaN())
+				continue;
 			/**
 			 * calculate index vector of points
 			 * and insert if not present

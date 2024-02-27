@@ -3,6 +3,8 @@
 #include "pcl_client.h"
 
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
+
 #include "Math/TransformVectorized.h"
 #include "ARBlueprintLibrary.h"
 
@@ -132,6 +134,13 @@ grpc::Status A_pcl_client::send_point_clouds()
 	 */
 	generated::ICP_Result response;
 
+	const bool interface_present = box_interface_obj &&
+		I_box_interface::Execute_has_box(box_interface_obj);
+
+	F_obb obb;
+	if (interface_present)
+		obb = I_box_interface::Execute_get_box(box_interface_obj);
+
 	const auto extrinsic_inv = cam->get_camera_view_matrix().Inverse();
 
 	/**
@@ -164,10 +173,12 @@ grpc::Status A_pcl_client::send_point_clouds()
 		for (auto& p : point_cloud.data)
 		{
 			p = world_trafo.TransformPosition(p);
-
-			const bool filtered = filter_point(p);
-			if (voxel && !filtered)
-				voxel->insert_point(p);
+			
+			if (interface_present)
+			{
+				if (!UKismetMathLibrary::IsPointInBoxWithTransform(p, FTransform(obb.rotation, obb.axis_box.GetCenter()), obb.axis_box.GetExtent()))
+					p.Set(NAN, NAN, NAN);
+			}
 		}
 
 		/**
@@ -175,6 +186,9 @@ grpc::Status A_pcl_client::send_point_clouds()
 		 */
 		if (point_cloud.data.IsEmpty())
 			continue;
+
+		if (voxel)
+			voxel->insert(point_cloud.data);
 
 		/**
 		 * transmit point clouds while stream is active
