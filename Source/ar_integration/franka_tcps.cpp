@@ -15,6 +15,9 @@ A_franka_tcps::A_franka_tcps()
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
 		TEXT("Material'/Game/voxel_material_opaque.voxel_material_opaque'")).Object;
 
+	auto root = CreateDefaultSubobject<USceneComponent>("root");
+	SetRootComponent(root);
+
 	/**
 	 * setup instanced mesh component
 	 */
@@ -25,6 +28,9 @@ A_franka_tcps::A_franka_tcps()
 	instanced->SetMaterial(0, mat);
 	instanced->SetMobility(EComponentMobility::Movable);
 	this->AddInstanceComponent(instanced);
+
+	instanced->AttachToComponent(root,
+		FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void A_franka_tcps::Tick(float DeltaSeconds)
@@ -40,6 +46,7 @@ void A_franka_tcps::BeginDestroy()
 void A_franka_tcps::set_tcps(const TArray<FVector>& data)
 {
 	instanced->ClearInstances();
+	instanced->SetRelativeRotation(FQuat(FVector(0., 0., 1.), UE_PI / 2.f));
 
 	for (const auto& p : data)
 		instanced->AddInstance(FTransform(

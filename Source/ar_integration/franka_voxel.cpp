@@ -16,7 +16,7 @@ A_franka_voxel::A_franka_voxel()
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
 		TEXT("Material'/Game/voxel_material_opaque.voxel_material_opaque'")).Object;
 
-	auto root = CreateDefaultSubobject<USceneComponent>("pin_component");
+	auto root = CreateDefaultSubobject<USceneComponent>("root");
 	SetRootComponent(root);
 
 	/**
