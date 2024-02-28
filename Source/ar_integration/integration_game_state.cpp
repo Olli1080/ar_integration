@@ -167,8 +167,8 @@ void A_integration_game_state::change_channel(FString target)
 		hand_tracking_client->async_transmit_data();
 
 		franka_client->async_transmit_data();
-		//franka_tcp_client->async_transmit_data();
-		//franka_joint_client->async_transmit_data();
+		franka_tcp_client->async_transmit_data();
+		franka_joint_client->async_transmit_data();
 	}
 
 	on_channel_change.Broadcast(channel);
