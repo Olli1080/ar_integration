@@ -3,6 +3,7 @@
 #include "Math/Vector.h"
 #include "Math/TransformVectorized.h"
 #include "HeadMountedDisplayTypes.h"
+#include "Misc/DateTime.h"
 
 #include "grpc_wrapper.h"
 #include "camera.h"
@@ -29,6 +30,9 @@
  * and modularity of conversion implementation
  * thereby allowing full utilization of the unreal system
  */
+
+UFUNCTION(BlueprintCallable)
+double ToUnixTimestampDecimal();
 
 class TF_Conv_Wrapper
 {
@@ -160,6 +164,18 @@ google::protobuf::RepeatedPtrField<inner_out> convert_array(const TArray<FVector
 		for (const auto& it : in)
 			out.Add(convert<inner_out, FVector>(it));
 	}
+	return out;
+}
+
+template<typename inner_out, typename inner_in>
+TArray<inner_out> convert_tarray(const google::protobuf::RepeatedPtrField<inner_in>& in)
+{
+	TArray<inner_out> out;
+	out.Reserve(in.size());
+
+	for (const auto& it : in)
+		out.Add(convert<inner_out, inner_in>(it));
+
 	return out;
 }
 
@@ -304,3 +320,9 @@ TArray<FVector> convert_meta(const generated::Tcps_TF_Meta& in, TF_Conv_Wrapper&
 
 template<>
 TOptional<FTransform> convert(const generated::ICP_Result& in);
+
+template<>
+FFrankaJoints convert(const generated::Joints& in);
+
+template<>
+F_joints_synced convert(const generated::Sync_Joints& in);

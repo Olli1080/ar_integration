@@ -22,7 +22,7 @@ bool U_grpc_channel::construct(FString target, int32 timeout)
 	const auto temp = CreateCustomChannel(std::string(TCHAR_TO_UTF8(*target)),
 		grpc::InsecureChannelCredentials(), cArgs);
 
-	established = temp->WaitForConnected(std::chrono::system_clock::now() +
+	const bool established = temp->WaitForConnected(std::chrono::system_clock::now() +
 		std::chrono::milliseconds(static_cast<long long>(timeout)));
 
 	if (established)
@@ -35,7 +35,7 @@ bool U_grpc_channel::construct(FString target, int32 timeout)
 
 bool U_grpc_channel::connected() const
 {
-	return established;
+	return get_state() != connection_state::NO_CHANNEL;
 }
 
 connection_state U_grpc_channel::get_state() const

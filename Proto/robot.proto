@@ -39,8 +39,18 @@ message Tcps_TF_Meta {
     optional Transformation_Meta transformation_meta = 2;
 }
 
+message Sync_Joints {
+    Joints joints = 1;
+    double utc_timepoint = 2;
+}
+
+message Sync_Joints_Array {
+    repeated Sync_Joints sync_joints = 1;
+}
+
 service robot_com {
     rpc transmit_joints (google.protobuf.Empty) returns (stream Joints) {}
+    rpc transmit_sync_joints (google.protobuf.Empty) returns (stream Sync_Joints_Array) {}
     rpc transmit_voxels (google.protobuf.Empty) returns (stream Voxel_TF_Meta) {}
     rpc transmit_tcps (google.protobuf.Empty) returns (stream Tcps_TF_Meta) {}  
 }

@@ -2,6 +2,8 @@
 
 #include "Math/Box.h"
 
+#include "Franka.h"
+
 #include "grpc_wrapper.generated.h"
 
 /**
@@ -173,4 +175,16 @@ struct AR_INTEGRATION_API F_voxel_data
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GRPC Wrapper")
 	FTransform robot_origin = FTransform::Identity;
+};
+
+USTRUCT(Blueprintable)
+struct AR_INTEGRATION_API F_joints_synced
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Robot")
+	FFrankaJoints joints;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Robot")
+	FDateTime time_stamp;
 };

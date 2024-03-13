@@ -1,5 +1,11 @@
 #include "util.h"
 
+double ToUnixTimestampDecimal()
+{
+	const auto stamp = FDateTime::Now();
+	return static_cast<double>(stamp.GetTicks() - FDateTime(1970, 1, 1).GetTicks()) / ETimespan::TicksPerSecond;
+}
+
 generated::Transformation_Meta generate_meta()
 {
 	generated::Transformation_Meta out;
@@ -376,6 +382,31 @@ TOptional<FTransform> convert(const generated::ICP_Result& in)
 		convert<TransformationMeta>(data.transformation_meta()), UnrealMeta
 	);
 	return convert_meta<FTransform>(data.matrix(), &converter);
+}
+
+template<>
+FFrankaJoints convert(const generated::Joints& in)
+{
+	FFrankaJoints joints;
+	joints.theta_0 = in.theta_1();
+	joints.theta_1 = in.theta_2();
+	joints.theta_2 = in.theta_3();
+	joints.theta_3 = in.theta_4();
+	joints.theta_4 = in.theta_5();
+	joints.theta_5 = in.theta_6();
+	joints.theta_6 = in.theta_7();
+
+	return joints;
+}
+
+template<>
+F_joints_synced convert(const generated::Sync_Joints& in)
+{
+	F_joints_synced out;
+	out.joints = convert<FFrankaJoints>(in.joints());
+	out.time_stamp = FDateTime(in.utc_timepoint() * ETimespan::TicksPerSecond);
+
+	return out;
 }
 
 template<>

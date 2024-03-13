@@ -68,6 +68,4 @@ private:
 	void keep_connected();
 	//grpc::CompletionQueue cq;
 	bool stop = false;
-
-	bool established = false;
 };
