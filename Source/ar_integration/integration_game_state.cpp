@@ -1,6 +1,5 @@
 #include "integration_game_state.h"
-
-#include "HeadMountedDisplayFunctionLibrary.h"
+//#include "HeadMountedDisplayFunctionLibrary.h"
 
 template<typename ... Ts>
 struct Overload : Ts ... {
@@ -17,7 +16,10 @@ A_integration_game_state::A_integration_game_state()
 
 	franka_client = NewObject<U_franka_client>();
 	franka_tcp_client = NewObject<U_franka_tcp_client>();
-	franka_joint_client = NewObject<U_franka_joint_client>();
+	//franka_joint_client = NewObject<U_franka_joint_client>();
+	franka_joint_sync_client = NewObject<U_franka_joint_sync_client>();
+
+	franka_controller_ = NewObject<U_franka_shadow_controller>();
 
 	channel = NewObject<U_grpc_channel>();
 
@@ -41,7 +43,9 @@ void A_integration_game_state::BeginPlay()
 
 	franka_voxel = GetWorld()->SpawnActor<A_franka_voxel>(params);
 	franka_tcps = GetWorld()->SpawnActor<A_franka_tcps>(params);
+
 	franka = GetWorld()->SpawnActor<AFranka>(params);
+	franka_controller_->set_robot(franka);
 	
 	franka_voxel->AttachToComponent(pin_component,
 		FAttachmentTransformRules::KeepRelativeTransform);
@@ -52,7 +56,8 @@ void A_integration_game_state::BeginPlay()
 
 	franka_client->on_voxel_data.AddDynamic(this, &A_integration_game_state::handle_voxels);
 	franka_tcp_client->on_tcp_data.AddDynamic(this, &A_integration_game_state::handle_tcps);
-	franka_joint_client->on_joint_data.AddDynamic(this, &A_integration_game_state::handle_joints);
+	//franka_joint_client->on_joint_data.AddDynamic(this, &A_integration_game_state::handle_joints);
+	franka_joint_sync_client->on_sync_joint_data.AddDynamic(this, &A_integration_game_state::handle_sync_joints);
 
 	on_post_actors.Broadcast();
 }
@@ -92,6 +97,8 @@ void A_integration_game_state::Tick(float DeltaSeconds)
 
 	for (const auto& set : to_set)
 		handle_object_instance(set);
+
+	franka_controller_->Tick(DeltaSeconds);
 }
 
 void A_integration_game_state::change_channel(FString target)
@@ -111,7 +118,8 @@ void A_integration_game_state::change_channel(FString target)
 	I_Base_Client_Interface::Execute_set_channel(debug_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(franka_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(franka_tcp_client, channel);
-	I_Base_Client_Interface::Execute_set_channel(franka_joint_client, channel);
+	//I_Base_Client_Interface::Execute_set_channel(franka_joint_client, channel);
+	I_Base_Client_Interface::Execute_set_channel(franka_joint_sync_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(pcl_client, channel);
 	/**
 	 * create new object_client and bind all the signals to
@@ -168,7 +176,8 @@ void A_integration_game_state::change_channel(FString target)
 
 		franka_client->async_transmit_data();
 		franka_tcp_client->async_transmit_data();
-		franka_joint_client->async_transmit_data();
+		//franka_joint_client->async_transmit_data();
+		franka_joint_sync_client->async_transmit_data();
 	}
 
 	on_channel_change.Broadcast(channel);
@@ -478,4 +487,9 @@ void A_integration_game_state::handle_tcps(const TArray<FVector>& data)
 void A_integration_game_state::handle_joints(const FFrankaJoints& data)
 {
 	franka->SetJoints(data);
+}
+
+void A_integration_game_state::handle_sync_joints(const TArray<F_joints_synced>& data)
+{
+	franka_controller_->set_visual_plan(data);
 }

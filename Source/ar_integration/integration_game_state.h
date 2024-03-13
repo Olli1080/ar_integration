@@ -13,6 +13,7 @@
 #include "franka_voxel.h"
 #include "franka_tcps.h"
 #include "Franka.h"
+#include "franka_shadow.h"
 #include "hand_tracking_client.h"
 #include "grpc_wrapper.h"
 
@@ -129,8 +130,11 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	U_franka_tcp_client* franka_tcp_client;
 
+	//UPROPERTY(BlueprintReadOnly)
+	//U_franka_joint_client* franka_joint_client;
+
 	UPROPERTY(BlueprintReadOnly)
-	U_franka_joint_client* franka_joint_client;
+	U_franka_joint_sync_client* franka_joint_sync_client;
 
 	UPROPERTY(BlueprintReadOnly)
 	A_franka_voxel* franka_voxel;
@@ -140,6 +144,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	AFranka* franka;
+
+	UPROPERTY(BlueprintReadOnly)
+	U_franka_shadow_controller* franka_controller_;
 
 	/**
 	 * thread safe update of anchor
@@ -272,6 +279,9 @@ private:
 
 	UFUNCTION()
 	void handle_joints(const FFrankaJoints& data);
+
+	UFUNCTION()
+	void handle_sync_joints(const TArray<F_joints_synced>& data);
 
 
 	/**
