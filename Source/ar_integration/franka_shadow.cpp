@@ -32,8 +32,10 @@ TOptional<F_joints_synced> U_franka_shadow_controller::current_sync_joints() con
 {
 	if (done())
 		return {};
+	if (plan_[0].time_stamp > last_update_)
+		return {};
 
-	return plan_[idx];
+	return plan_[idx - 1];
 }
 
 TOptional<FFrankaJoints> U_franka_shadow_controller::current_joints_interp() const
@@ -44,11 +46,11 @@ TOptional<FFrankaJoints> U_franka_shadow_controller::current_joints_interp() con
 
 	const auto& [joints, tp] = sync_joints_opt.GetValue();
 	
-	float progress = FTimespan::Ratio(last_update_ - tp, plan_[idx + 1].time_stamp - tp);
+	float progress = FTimespan::Ratio(last_update_ - tp, plan_[idx].time_stamp - tp);
 	//ensure division results in sound values
 	progress = std::max(std::min(progress, 1.f), 0.f);
 
-	return FMath::Lerp(joints, plan_[idx + 1].joints, progress);
+	return FMath::Lerp(joints, plan_[idx].joints, progress);
 }
 
 void U_franka_shadow_controller::set_robot(AFranka* franka)
@@ -58,7 +60,7 @@ void U_franka_shadow_controller::set_robot(AFranka* franka)
 
 bool U_franka_shadow_controller::done() const
 {
-	return idx == plan_.Num();
+	return plan_.IsEmpty() || plan_.Last().time_stamp < last_update_;
 }
 
 void U_franka_shadow_controller::clear_Implementation()

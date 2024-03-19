@@ -165,25 +165,25 @@ struct FFrankaJoints
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (Units = "Radians"))
-	double theta_0;
+	double theta_0 = 0.;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (Units = "Radians"))
-	double theta_1;
+	double theta_1 = 0.;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (Units = "Radians"))
-	double theta_2;
+	double theta_2 = 0.;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (Units = "Radians"))
-	double theta_3;
+	double theta_3 = 0.;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (Units = "Radians"))
-	double theta_4;
+	double theta_4 = 0.;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (Units = "Radians"))
-	double theta_5;
+	double theta_5 = 0.;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (Units = "Radians"))
-	double theta_6;
+	double theta_6 = 0.;
 
 	double getValue(int idx) const;
 };

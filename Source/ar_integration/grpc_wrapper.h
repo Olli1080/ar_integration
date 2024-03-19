@@ -183,10 +183,10 @@ struct AR_INTEGRATION_API F_joints_synced
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Robot")
-	FFrankaJoints joints;
+	FFrankaJoints joints {};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Robot")
-	FDateTime time_stamp;
+	FDateTime time_stamp {};
 };
 
 UENUM(BlueprintType)

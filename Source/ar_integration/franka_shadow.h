@@ -48,6 +48,7 @@ public:
 	 */
 	void Tick(float DeltaSeconds);
 
+	UFUNCTION(BlueprintCallable)
 	void set_visual_plan(const TArray<F_joints_synced>& plan);
 	TOptional<F_joints_synced> current_sync_joints() const;
 	TOptional<FFrankaJoints> current_joints_interp() const;
