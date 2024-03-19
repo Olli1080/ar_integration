@@ -26,13 +26,16 @@ grpc::Status U_franka_client::transmit_data(grpc::ClientContext& ctx)
 	stream->WaitForInitialMetadata();
 
 	TF_Conv_Wrapper tf_wrapper;
-	generated::Voxel_TF_Meta data;
+	generated::Voxel_Transmission data;
 
 	while (stream->Read(&data))
 	{
-		FFunctionGraphTask::CreateAndDispatchWhenReady([this, voxel_data = convert_meta<F_voxel_data>(data, tf_wrapper)]()
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, voxel_data = convert_meta<Voxel_Data>(data, tf_wrapper)]()
 			{
-				on_voxel_data.Broadcast(voxel_data);
+				if (voxel_data.IsType<F_voxel_data>())
+					on_voxel_data.Broadcast(voxel_data.Get<F_voxel_data>());
+				else
+					on_visual_change.Broadcast(voxel_data.Get<Visual_Change>());
 			},
 			TStatId{}, nullptr, ENamedThreads::GameThread);
 	}
@@ -81,13 +84,16 @@ grpc::Status U_franka_tcp_client::transmit_data(grpc::ClientContext& ctx)
 	stream->WaitForInitialMetadata();
 
 	TF_Conv_Wrapper tf_wrapper;
-	generated::Tcps_TF_Meta data;
+	generated::Tcps_Transmission data;
 
 	while (stream->Read(&data))
 	{
-		FFunctionGraphTask::CreateAndDispatchWhenReady([this, tcp_data = convert_meta<TArray<FVector>>(data, tf_wrapper)]()
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, tcp_data = convert_meta<Tcps_Data>(data, tf_wrapper)/*convert_meta<TArray<FVector>>(data, tf_wrapper)*/]()
 			{
-				on_tcp_data.Broadcast(tcp_data);
+				if (tcp_data.IsType<TArray<FVector>>())
+					on_tcp_data.Broadcast(tcp_data.Get<TArray<FVector>>());
+				else
+					on_visual_change.Broadcast(tcp_data.Get<Visual_Change>());
 			},
 			TStatId{}, nullptr, ENamedThreads::GameThread);
 	}
@@ -188,12 +194,15 @@ grpc::Status U_franka_joint_sync_client::transmit_data(grpc::ClientContext& ctx)
 		stub->transmit_sync_joints(&ctx, empty);
 	stream->WaitForInitialMetadata();
 
-	generated::Sync_Joints_Array data;
+	generated::Sync_Joints_Transmission data;
 	while (stream->Read(&data))
 	{
-		FFunctionGraphTask::CreateAndDispatchWhenReady([this, sync_joint_data = convert_tarray<F_joints_synced>(data.sync_joints())]()
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, sync_joint_data = convert<Sync_Joints_Data>(data)]()
 			{
-				on_sync_joint_data.Broadcast(sync_joint_data);
+				if (sync_joint_data.IsType<TArray<F_joints_synced>>())
+					on_sync_joint_data.Broadcast(sync_joint_data.Get<TArray<F_joints_synced>>());
+				else
+					on_visual_change.Broadcast(sync_joint_data.Get<Visual_Change>());
 			},
 			TStatId{}, nullptr, ENamedThreads::GameThread);
 	}

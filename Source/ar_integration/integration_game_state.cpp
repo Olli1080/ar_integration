@@ -55,9 +55,15 @@ void A_integration_game_state::BeginPlay()
 		FAttachmentTransformRules::KeepRelativeTransform);
 
 	franka_client->on_voxel_data.AddDynamic(this, &A_integration_game_state::handle_voxels);
+	franka_client->on_visual_change.AddDynamic(franka_voxel, &I_franka_Interface::set_visibility);
+
 	franka_tcp_client->on_tcp_data.AddDynamic(this, &A_integration_game_state::handle_tcps);
-	//franka_joint_client->on_joint_data.AddDynamic(this, &A_integration_game_state::handle_joints);
+	franka_tcp_client->on_visual_change.AddDynamic(franka_tcps, &I_franka_Interface::set_visibility);
+
 	franka_joint_sync_client->on_sync_joint_data.AddDynamic(this, &A_integration_game_state::handle_sync_joints);
+	franka_joint_sync_client->on_visual_change.AddDynamic(franka_controller_, &I_franka_Interface::set_visibility);
+
+	//franka_joint_client->on_joint_data.AddDynamic(this, &A_integration_game_state::handle_joints);
 
 	on_post_actors.Broadcast();
 }
@@ -476,12 +482,14 @@ A_procedural_mesh_actor* A_integration_game_state::find_or_spawn(const FString& 
 
 void A_integration_game_state::handle_voxels(const F_voxel_data& data)
 {
-	franka_voxel->set_voxels(data);
+	//if (!franka_voxel->IsHidden())
+		franka_voxel->set_voxels(data);
 }
 
 void A_integration_game_state::handle_tcps(const TArray<FVector>& data)
 {
-	franka_tcps->set_tcps(data);
+	//if (!franka_tcps->IsHidden())
+		franka_tcps->set_tcps(data);
 }
 
 void A_integration_game_state::handle_joints(const FFrankaJoints& data)
@@ -491,5 +499,6 @@ void A_integration_game_state::handle_joints(const FFrankaJoints& data)
 
 void A_integration_game_state::handle_sync_joints(const TArray<F_joints_synced>& data)
 {
-	franka_controller_->set_visual_plan(data);
+	//if (!franka->IsHidden())
+		franka_controller_->set_visual_plan(data);
 }

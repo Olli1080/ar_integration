@@ -25,6 +25,10 @@
 
 #include "TransformHelper.h"
 
+static_assert(Visual_Change::ENABLED == generated::Visual_Change::ENABLED);
+static_assert(Visual_Change::DISABLED == generated::Visual_Change::DISABLED);
+static_assert(Visual_Change::REVOKED == generated::Visual_Change::REVOKED);
+
 /**
  * This header allows hiding details of generated types
  * and modularity of conversion implementation
@@ -326,3 +330,12 @@ FFrankaJoints convert(const generated::Joints& in);
 
 template<>
 F_joints_synced convert(const generated::Sync_Joints& in);
+
+template<>
+Sync_Joints_Data convert(const generated::Sync_Joints_Transmission& in);
+
+template<>
+Tcps_Data convert_meta(const generated::Tcps_Transmission& in, TF_Conv_Wrapper& cv);
+
+template<>
+Voxel_Data convert_meta(const generated::Voxel_Transmission& in, TF_Conv_Wrapper& cv);

@@ -53,3 +53,24 @@ void A_franka_tcps::set_tcps(const TArray<FVector>& data)
 			FQuat::Identity, p, FVector(0.01, 0.01, 0.01)
 		));
 }
+
+void A_franka_tcps::clear_Implementation()
+{
+	instanced->ClearInstances();
+}
+
+void A_franka_tcps::set_visibility_Implementation(Visual_Change vis_change)
+{
+	switch (vis_change)
+	{
+	case ENABLED:
+		SetHidden(false);
+		break;
+	case DISABLED:
+		SetHidden(true);
+		break;
+	case REVOKED:
+		clear_Implementation();
+		break;
+	}
+}

@@ -188,3 +188,15 @@ struct AR_INTEGRATION_API F_joints_synced
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Robot")
 	FDateTime time_stamp;
 };
+
+UENUM(BlueprintType)
+enum Visual_Change : uint8
+{
+	ENABLED = 0     UMETA(DisplayName = "Enabled"),
+	DISABLED = 1	UMETA(DisplayName = "Disabled"),
+	REVOKED = 2     UMETA(DisplayName = "Revoked")
+};
+
+typedef TVariant<TArray<F_joints_synced>, Visual_Change> Sync_Joints_Data;
+typedef TVariant<TArray<FVector>, Visual_Change> Tcps_Data;
+typedef TVariant<F_voxel_data, Visual_Change> Voxel_Data;

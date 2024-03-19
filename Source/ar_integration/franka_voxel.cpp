@@ -58,3 +58,24 @@ void A_franka_voxel::set_voxels(const F_voxel_data& data)
 			FVector(0.01 * data.voxel_side_length)));
 	}
 }
+
+void A_franka_voxel::clear_Implementation()
+{
+	instanced->ClearInstances();
+}
+
+void A_franka_voxel::set_visibility_Implementation(Visual_Change vis_change)
+{
+	switch (vis_change)
+	{
+	case ENABLED:
+		SetHidden(false);
+		break;
+	case DISABLED:
+		SetHidden(true);
+		break;
+	case REVOKED:
+		clear_Implementation();
+		break;
+	}
+}

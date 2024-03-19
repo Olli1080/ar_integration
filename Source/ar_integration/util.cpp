@@ -622,7 +622,41 @@ generated::Hand_Data convert(const std::pair<FXRMotionControllerData, FDateTime>
 	return out;
 }
 
+template<>
+Sync_Joints_Data convert(const generated::Sync_Joints_Transmission& in)
+{
+	Sync_Joints_Data out;
+	if (in.has_sync_joints_data())
+		out.Emplace<TArray<F_joints_synced>>(convert_tarray<F_joints_synced>(in.sync_joints_data().sync_joints()));
+	else
+		out.Emplace<Visual_Change>(static_cast<Visual_Change>(in.state_update()));
 
+	return out;
+}
+
+template<>
+Tcps_Data convert_meta(const generated::Tcps_Transmission& in, TF_Conv_Wrapper& cv)
+{
+	Tcps_Data out;
+	if (in.has_tcps_data())
+		out.Emplace<TArray<FVector>>(convert_meta<TArray<FVector>>(in.tcps_data(), cv));
+	else
+		out.Emplace<Visual_Change>(static_cast<Visual_Change>(in.state_update()));
+
+	return out;
+}
+
+template<>
+Voxel_Data convert_meta(const generated::Voxel_Transmission& in, TF_Conv_Wrapper& cv)
+{
+	Voxel_Data out;
+	if (in.has_voxels_data())
+		out.Emplace<F_voxel_data>(convert_meta<F_voxel_data>(in.voxels_data(), cv));
+	else
+		out.Emplace<Visual_Change>(static_cast<Visual_Change>(in.state_update()));
+
+	return out;
+}
 
 
 void TF_Conv_Wrapper::set_source(const Transformation::TransformationMeta& meta)

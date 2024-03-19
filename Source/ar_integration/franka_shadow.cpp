@@ -61,6 +61,27 @@ bool U_franka_shadow_controller::done() const
 	return idx == plan_.Num();
 }
 
+void U_franka_shadow_controller::clear_Implementation()
+{
+	plan_.Empty();
+}
+
+void U_franka_shadow_controller::set_visibility_Implementation(Visual_Change vis_change)
+{
+	switch (vis_change)
+	{
+	case ENABLED:
+		franka_->SetHidden(false);
+		break;
+	case DISABLED:
+		franka_->SetHidden(true);
+		break;
+	case REVOKED:
+		clear_Implementation();
+		break;
+	}
+}
+
 void U_franka_shadow_controller::advance_to_present()
 {
 	for (; idx < plan_.Num() && plan_[idx].time_stamp < last_update_; ++idx);

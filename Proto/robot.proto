@@ -9,6 +9,13 @@ package generated;
 option optimize_for = LITE_RUNTIME;
 option cc_enable_arenas = true;
 
+enum Visual_Change
+{
+    ENABLED = 0;
+    DISABLED = 1;
+    REVOKED = 2;
+}
+
 message Joints {
 	float theta_1 = 1;
 	float theta_2 = 2;
@@ -34,9 +41,23 @@ message Voxel_TF_Meta {
 	optional Transformation_Meta transformation_meta = 2;
 }
 
+message Voxel_Transmission {
+    oneof sth {
+	    Voxel_TF_Meta voxels_data = 1;
+        Visual_Change state_update = 2;
+    }
+}
+
 message Tcps_TF_Meta {
-	Tcps tcps = 1;
+    Tcps tcps = 1;
     optional Transformation_Meta transformation_meta = 2;
+}
+
+message Tcps_Transmission {
+    oneof sth {
+        Tcps_TF_Meta tcps_data = 1;
+        Visual_Change state_update = 2;
+    }
 }
 
 message Sync_Joints {
@@ -48,9 +69,16 @@ message Sync_Joints_Array {
     repeated Sync_Joints sync_joints = 1;
 }
 
+message Sync_Joints_Transmission {
+    oneof sth {
+        Sync_Joints_Array sync_joints_data = 1;
+        Visual_Change state_update = 2;
+    }
+}
+
 service robot_com {
     rpc transmit_joints (google.protobuf.Empty) returns (stream Joints) {}
-    rpc transmit_sync_joints (google.protobuf.Empty) returns (stream Sync_Joints_Array) {}
-    rpc transmit_voxels (google.protobuf.Empty) returns (stream Voxel_TF_Meta) {}
-    rpc transmit_tcps (google.protobuf.Empty) returns (stream Tcps_TF_Meta) {}  
+    rpc transmit_sync_joints (google.protobuf.Empty) returns (stream Sync_Joints_Transmission) {}
+    rpc transmit_voxels (google.protobuf.Empty) returns (stream Voxel_Transmission) {}
+    rpc transmit_tcps (google.protobuf.Empty) returns (stream Tcps_Transmission) {}  
 }

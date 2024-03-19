@@ -14,7 +14,7 @@
 #include "grpc_include_end.h"
 
 #include "franka_client.generated.h"
-
+/*
 UENUM()
 enum class franka_client_status : uint8
 {
@@ -23,6 +23,8 @@ enum class franka_client_status : uint8
 	RUNNING,
 	TERMINATED
 };
+*/
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualChange, Visual_Change, new_state);
 
 /*
 #define AUTO_RECONNECT() \
@@ -56,6 +58,7 @@ public:
 	void state_change_Implementation(connection_state old_state, connection_state new_state) override;
 
 	FOnVoxelData on_voxel_data;
+	FOnVisualChange on_visual_change;
 
 private:
 
@@ -91,6 +94,7 @@ public:
 	void state_change_Implementation(connection_state old_state, connection_state new_state) override;
 
 	FOnTcpData on_tcp_data;
+	FOnVisualChange on_visual_change;
 
 private:
 
@@ -162,6 +166,7 @@ public:
 	void state_change_Implementation(connection_state old_state, connection_state new_state) override;
 
 	FOnJointSyncData on_sync_joint_data;
+	FOnVisualChange on_visual_change;
 
 private:
 

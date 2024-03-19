@@ -6,6 +6,7 @@
 
 #include "Math/UnrealMathUtility.h"
 
+#include "franka_common.h"
 #include "Franka.h"
 #include "grpc_wrapper.h"
 
@@ -35,7 +36,7 @@ template<> struct TCustomLerp<FFrankaJoints>
 
 
 UCLASS(BlueprintType)
-class U_franka_shadow_controller : public UObject
+class U_franka_shadow_controller : public UObject, public I_franka_Interface
 {
 	GENERATED_BODY()
 
@@ -54,6 +55,10 @@ public:
 	void set_robot(AFranka* franka);
 
 	bool done() const;
+
+	void clear_Implementation() override;
+
+	void set_visibility_Implementation(Visual_Change vis_change) override;
 
 private:
 
