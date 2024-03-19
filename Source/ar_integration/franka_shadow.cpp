@@ -17,9 +17,9 @@ void U_franka_shadow_controller::Tick(float DeltaSeconds)
 
 void U_franka_shadow_controller::set_visual_plan(const TArray<F_joints_synced>& plan)
 {
-	const auto current_tp = FDateTime::UtcNow();
+	last_update_ = FDateTime::UtcNow() + look_ahead;
 
-	if (plan.IsEmpty() || plan.Last().time_stamp < current_tp)
+	if (plan.IsEmpty() || plan.Last().time_stamp < last_update_)
 		return;
 
 	plan_ = plan;
@@ -71,10 +71,10 @@ void U_franka_shadow_controller::set_visibility_Implementation(Visual_Change vis
 	switch (vis_change)
 	{
 	case ENABLED:
-		franka_->SetHidden(false);
+		franka_->SetActorHiddenInGame(false);
 		break;
 	case DISABLED:
-		franka_->SetHidden(true);
+		franka_->SetActorHiddenInGame(true);
 		break;
 	case REVOKED:
 		clear_Implementation();

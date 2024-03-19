@@ -64,10 +64,10 @@ void A_franka_tcps::set_visibility_Implementation(Visual_Change vis_change)
 	switch (vis_change)
 	{
 	case ENABLED:
-		SetHidden(false);
+		SetActorHiddenInGame(false);
 		break;
 	case DISABLED:
-		SetHidden(true);
+		SetActorHiddenInGame(true);
 		break;
 	case REVOKED:
 		clear_Implementation();

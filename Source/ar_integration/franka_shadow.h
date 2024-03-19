@@ -68,7 +68,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	FTimespan look_ahead = FTimespan
 	{
-		std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds{300}).count()
+		std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds{100}).count()
 		/ ETimespan::NanosecondsPerTick
 	};
 
