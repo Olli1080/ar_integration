@@ -404,7 +404,7 @@ F_joints_synced convert(const generated::Sync_Joints& in)
 {
 	F_joints_synced out;
 	out.joints = convert<FFrankaJoints>(in.joints());
-	out.time_stamp = FDateTime(in.utc_timepoint() * ETimespan::TicksPerSecond);
+	out.time_stamp = FDateTime(in.utc_timepoint() * ETimespan::TicksPerSecond + FDateTime(1970, 1, 1).GetTicks());
 
 	return out;
 }
