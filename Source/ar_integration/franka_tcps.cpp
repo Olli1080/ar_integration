@@ -46,7 +46,7 @@ void A_franka_tcps::BeginDestroy()
 void A_franka_tcps::set_tcps(const TArray<FVector>& data)
 {
 	instanced->ClearInstances();
-	instanced->SetRelativeRotation(FQuat(FVector(0., 0., 1.), UE_PI / 2.f));
+	//instanced->SetRelativeRotation(FQuat(FVector(0., 0., 1.), UE_PI / 2.f));
 
 	for (const auto& p : data)
 		instanced->AddInstance(FTransform(
