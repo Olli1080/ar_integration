@@ -100,7 +100,7 @@ static FRobot generateFrankaBlueprint()
 		comp.meshData.Add({TEXT("/Script/Engine.StaticMesh'/Game/Franka/Link7_with_KMS_metalic.Link7_with_KMS_metalic'"), EColorFranka::METALLIC });
 		link.composite.Add(std::move(comp));
 		links.Add(std::move(link));
-	}
+	}/*
 	{ //link 8
 		FLink link;
 		link.DhParameter = { 0.1714, -PI_2 / 2.f, 0.0, 0, DHConvention::CRAIGS };
@@ -130,7 +130,7 @@ static FRobot generateFrankaBlueprint()
 		links.Add(std::move(link));
 	}
 	tcp.transform = FTransform(UE::Math::TVector<double>(0, 0, -6));
-	tcp.transform.SetScale3D(UE::Math::TVector<double>(0.1));
+	tcp.transform.SetScale3D(UE::Math::TVector<double>(0.1));*/
 
 
 	return robot;
@@ -240,6 +240,7 @@ AFranka::AFranka()
 	tcpComp->SetupAttachment(structure.Last());
 	tcpComp->SetRelativeTransform(blueprint.tcp.transform);
 
+#if WITH_COORD
 	const auto find_gen_class = StaticLoadClass(UObject::StaticClass(), nullptr, TEXT("/Script/Engine.Blueprint'/Game/coord_frame_2.coord_frame_2_C'"));
 	if (!find_gen_class)
 		return;
@@ -247,6 +248,7 @@ AFranka::AFranka()
 	if (!gen_class)
 		return;
 	coord_blueprint = gen_class;
+#endif
 }
 
 // Wird aufgerufen, wenn das Spiel beginnt oder wenn es gespawnt wird
@@ -254,6 +256,7 @@ void AFranka::BeginPlay()
 {
 	Super::BeginPlay();
 
+#if WITH_COORD
 	if (!coord_blueprint)
 		return;
 
@@ -275,6 +278,7 @@ void AFranka::BeginPlay()
 		sth0->AttachToComponent(comp, rules);
 		sth0->SetActorScale3D(FVector{ 0.2 });
 	}
+#endif
 }
 
 // Jeden Frame aufgerufen

@@ -12,18 +12,17 @@ stream_thread::~stream_thread()
 {
 	bool expected = false;
 	if (!destroyed.compare_exchange_strong(expected, true))
+	{
+		thread.join();
 		return; //destroyed was already set
+	}
 
 	/**
 	 * abort transmission
 	 * and join implicitly
 	 */
 	ctx.TryCancel();
-
-#if __cplusplus < 202002L
-	if (thread.joinable())
-		thread.join();
-#endif
+	thread.join();
 }
 
 bool stream_thread::done() const

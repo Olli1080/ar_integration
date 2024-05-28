@@ -7,6 +7,8 @@
 
 #include "Franka.generated.h"
 
+#define WITH_COORD 0
+
 UENUM(BlueprintType)
 enum class DHConvention : uint8
 {

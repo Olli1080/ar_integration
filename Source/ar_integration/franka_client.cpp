@@ -3,6 +3,11 @@
 #include "util.h"
 #include "Franka.h"
 
+U_franka_client::~U_franka_client()
+{
+	U_franka_client::stop_Implementation();
+}
+
 void U_franka_client::async_transmit_data()
 {
 	if (!channel ||
@@ -60,6 +65,11 @@ void U_franka_client::state_change_Implementation(connection_state old_state, co
 
 
 
+
+U_franka_tcp_client::~U_franka_tcp_client()
+{
+	U_franka_tcp_client::stop_Implementation();
+}
 
 void U_franka_tcp_client::async_transmit_data()
 {
@@ -170,7 +180,10 @@ void U_franka_joint_client::state_change_Implementation(connection_state old_sta
 }
 
 
-
+U_franka_joint_sync_client::~U_franka_joint_sync_client()
+{
+	U_franka_joint_sync_client::stop_Implementation();
+}
 
 void U_franka_joint_sync_client::async_transmit_data()
 {

@@ -48,6 +48,7 @@ class U_franka_client : public UObject, public I_Base_Client_Interface
 public:
 
 	U_franka_client() = default;
+	~U_franka_client() override;
 
 	UFUNCTION(BlueprintCallable)
 	void async_transmit_data();
@@ -84,6 +85,7 @@ class U_franka_tcp_client : public UObject, public I_Base_Client_Interface
 public:
 
 	U_franka_tcp_client() = default;
+	~U_franka_tcp_client() override;
 
 	UFUNCTION(BlueprintCallable)
 	void async_transmit_data();
@@ -156,6 +158,7 @@ class U_franka_joint_sync_client : public UObject, public I_Base_Client_Interfac
 public:
 
 	U_franka_joint_sync_client() = default;
+	~U_franka_joint_sync_client() override;
 
 	UFUNCTION(BlueprintCallable)
 	void async_transmit_data();
