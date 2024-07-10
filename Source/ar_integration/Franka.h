@@ -98,7 +98,7 @@ struct FRobotMesh
 	FString meshPath;
 
 	UPROPERTY()
-	EColorFranka materialType;
+	FString materialPath;
 };
 
 USTRUCT()
