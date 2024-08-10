@@ -15,7 +15,7 @@
 template<> struct TCustomLerp<FFrankaJoints>
 {
 	// Required to use our custom Lerp() function below.
-	enum { Value = true };
+	constexpr static bool Value = true;
 
 	// Implements for float Alpha param. You could also add overrides or make it a template param.
 	static inline FFrankaJoints Lerp(const FFrankaJoints& A, const FFrankaJoints& B, const float& Alpha)
