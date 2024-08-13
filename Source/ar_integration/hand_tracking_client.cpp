@@ -139,6 +139,8 @@ void A_hand_tracking_client::pre_process(FXRMotionControllerData& data) const
 {
 	if (!data.bValid) return;
 
+	std::unique_lock lock(trafo_mtx);
+
 	data.GripPosition = local_transform.TransformPosition(data.GripPosition);
 	data.AimPosition = local_transform.TransformPosition(data.AimPosition);
 		

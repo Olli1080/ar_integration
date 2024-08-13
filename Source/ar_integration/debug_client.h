@@ -3,6 +3,9 @@
 #include "EngineMinimal.h"
 #include "UObject/Object.h"
 
+#include <string>
+#include <optional>
+
 #include "grpc_channel.h"
 
 #include "base_client.h"
@@ -28,6 +31,8 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Grpc|Debug")
 	bool debug(const FString& message, FString& response) const;
+
+	std::optional<std::string> debug(const std::string& message) const;
 
 private:
 

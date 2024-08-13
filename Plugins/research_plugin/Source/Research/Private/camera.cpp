@@ -22,8 +22,12 @@ struct SAnchorMSFT
 
 #if (PLATFORM_HOLOLENS)
 extern "C"
-HMODULE LoadLibraryA(
-    LPCSTR lpLibFileName
+WINBASEAPI
+_Ret_maybenull_
+HMODULE
+WINAPI
+LoadLibraryA(
+    _In_ LPCSTR lpLibFileName
 );
 #endif
 
@@ -376,10 +380,10 @@ TArray<FVector> A_camera::process(
     for (UINT i = 0, index = 0; i < resolution.Height; ++i)
     {
         float uv[2];
-        uv[1] = i + 0.5f;
+        uv[1] = i;// + 0.5f;
         for (UINT j = 0; j < resolution.Width; ++j, ++index)
         {
-            uv[0] = j + 0.5f;
+            uv[0] = j;// + 0.5f;
             //float uv[2] = { static_cast<float>(i), static_cast<float>(j) };
 
             if (sigma[index] & 0x80)

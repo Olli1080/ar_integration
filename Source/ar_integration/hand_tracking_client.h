@@ -53,7 +53,7 @@ private:
 	
 	std::atomic<hand_client_status> status = hand_client_status::READY;
 
-	std::mutex trafo_mtx;
+	mutable std::mutex trafo_mtx;
 	FTransform local_transform;
 	
 	TCircularQueue<generated::Hand_Data> hand_queue = 

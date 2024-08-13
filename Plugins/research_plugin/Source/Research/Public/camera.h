@@ -198,7 +198,7 @@ private:
      * limited buffer for point clouds
      */
     TCircularQueue<F_located_point_cloud> pcl_queue =
-        TCircularQueue<F_located_point_cloud>(16);
+        TCircularQueue<F_located_point_cloud>(5 + 1);
     
     std::atomic<camera_state> state = camera_state::INIT;
     std::unique_ptr<std::thread> worker_thread;
