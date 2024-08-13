@@ -120,10 +120,19 @@ void A_pcl_client::set_box_interface_obj(UObject* obj)
 		box_interface_obj = obj;		
 }
 
+void A_pcl_client::state_change_sync(state old_state, state new_state) const
+{
+	FFunctionGraphTask::CreateAndDispatchWhenReady([this, old_state, new_state]()
+		{
+			on_state_change.Broadcast(old_state, new_state);
+		},
+		TStatId{}, nullptr, ENamedThreads::GameThread);
+}
+
 void A_pcl_client::set_state(state new_state)
 {
 	if (const auto old_state = current_state.exchange(new_state); old_state != new_state)
-		on_state_change.Broadcast(old_state, new_state);
+		state_change_sync(old_state, new_state);
 }
 
 grpc::Status A_pcl_client::send_point_clouds()
@@ -317,7 +326,7 @@ void A_pcl_client::toggle(bool active)
 		expected, state::RUNNING);
 
 	if (expected != state::RUNNING)
-		on_state_change.Broadcast(expected, state::RUNNING);
+		state_change_sync(expected, state::RUNNING);
 	
 	if (!was_expected) return;
 

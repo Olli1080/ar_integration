@@ -222,6 +222,8 @@ public:
 	
 private:
 
+	void state_change_sync(state old_state, state new_state) const;
+
 	/**
 	 * @var voxel actor visualizing voxels
 	 */
