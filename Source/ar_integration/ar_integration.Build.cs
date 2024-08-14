@@ -11,7 +11,7 @@ public class ar_integration : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Research", "Grpc", "AugmentedReality", "ProceduralMeshComponent", "HeadMountedDisplay", "UXTools", "ProceduralMeshComponent" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Research", "Grpc", "AugmentedReality", "ProceduralMeshComponent", "HeadMountedDisplay", "UXTools", "ProceduralMeshComponent", "XRBase" });
 
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

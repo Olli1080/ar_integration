@@ -38,7 +38,7 @@ public class Research : ModuleRules
 
     public Research(ReadOnlyTargetRules Target) : base(Target)
     {
-        CppStandard = CppStandardVersion.Cpp17;
+        CppStandard = CppStandardVersion.Cpp20;
         PublicDependencyModuleNames.AddRange(new string[] {
             "Core", "CoreUObject", "GeometryCore", "Engine", "AugmentedReality"
         });
@@ -54,7 +54,7 @@ public class Research : ModuleRules
             // these parameters mandatory for winrt support
             bEnableExceptions = true;
             bUseUnity = false;
-            CppStandard = CppStandardVersion.Cpp17;
+            CppStandard = CppStandardVersion.Cpp20;
             PublicSystemLibraries.AddRange(new string[] { "shlwapi.lib", "runtimeobject.lib" });
 
             // prepare everything for nuget
