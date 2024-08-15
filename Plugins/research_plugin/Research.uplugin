@@ -13,12 +13,16 @@
 	"CanContainContent": false,
 	"IsBetaVersion": false,
 	"Installed": false,
+	"SupportedTargetPlatforms": [
+		"Win64",
+		"HoloLens"
+	],
 	"Modules": [
 		{
 			"Name": "Research",
 			"Type": "Runtime",
 			"LoadingPhase": "PreDefault",
-			"WhitelistPlatforms": [ "HoloLens" ]
+			"WhitelistPlatforms": [ "Win64", "HoloLens" ]
 		}
 	],
 	"Plugins": [

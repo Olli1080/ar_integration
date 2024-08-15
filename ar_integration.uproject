@@ -75,6 +75,10 @@
 				"Win64",
 				"HoloLens"
 			]
+		},
+		{
+			"Name": "XRBase",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
