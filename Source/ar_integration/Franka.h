@@ -72,10 +72,10 @@ struct F_LinkVisual
 	GENERATED_BODY()
 
 	UPROPERTY()
-	EColorFranka color;
+	EColorFranka color = EColorFranka::WHITE;
 
 	UPROPERTY()
-	UStaticMesh* mesh;
+	UStaticMesh* mesh = nullptr;
 };
 
 USTRUCT()
