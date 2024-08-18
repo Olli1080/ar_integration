@@ -7,6 +7,7 @@ using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EpicGames.Core;
+using Microsoft.Extensions.Logging;
 using UnrealBuildTool;
 
 public class Research : ModuleRules
@@ -15,7 +16,7 @@ public class Research : ModuleRules
 	{
 		if(!File.Exists(source))
 		{
-			Log.TraceError("Class {0} can't find {1} file for copying", this.GetType().Name, source);
+			Logger.LogError("Class {Name} can't find {Source} file for copying", this.GetType().Name, source);
 			return;
 		}
 
@@ -25,14 +26,14 @@ public class Research : ModuleRules
 		}
 		catch(IOException ex)
 		{
-			Log.TraceWarning("Failed to copy {0} to {1} with exception: {2}", source, destination, ex.Message);
+			Logger.LogWarning("Failed to copy {Source} to {Destination} with exception: {Exception}", source, destination, ex.Message);
 			if (!File.Exists(destination))
 			{
-				Log.TraceError("Destination file {0} does not exist", destination);
+				Logger.LogError("Destination file {Destination} does not exist", destination);
 				return;
 			}
 
-			Log.TraceWarning("Destination file {0} already existed and is probably in use.  The old file will be used for the runtime dependency.  This may happen when packaging a Win64 exe from the editor.", destination);
+			Logger.LogWarning("Destination file {Destination} already existed and is probably in use.  The old file will be used for the runtime dependency.  This may happen when packaging a Win64 exe from the editor.", destination);
 		}
 	}
 
