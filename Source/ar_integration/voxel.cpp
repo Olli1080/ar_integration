@@ -6,6 +6,9 @@ A_voxel::A_voxel()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	auto root = CreateDefaultSubobject<USceneComponent>("root");
+	SetRootComponent(root);
+
 	/**
 	 * load global mesh and material by engine ref
 	 */

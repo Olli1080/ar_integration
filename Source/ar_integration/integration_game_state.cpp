@@ -9,6 +9,9 @@ template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
 A_integration_game_state::A_integration_game_state()
 {
+	auto root = CreateDefaultSubobject<USceneComponent>("root");
+	SetRootComponent(root);
+
 	PrimaryActorTick.bCanEverTick = true;
 
 	debug_client = NewObject<U_debug_client>();

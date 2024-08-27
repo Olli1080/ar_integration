@@ -183,6 +183,7 @@ void A_camera::init(threading threading_type)
         winrt::check_hresult(lt_camera_sensor->GetCameraExtrinsicsMatrix(&m));
         camera_view_matrix = convert<FTransform>(m);
     }
+    obtain_coord_system();
     /**
      * start worker
      */
@@ -209,9 +210,6 @@ void A_camera::init(threading threading_type)
 
 void A_camera::obtain_coord_system()
 {
-    if (session_status != EARSessionStatus::Running)
-        return;
-
     /**
      * spawn arpin to dummy component and extract
      * underlying spatial anchor and its coordinate system
@@ -291,8 +289,8 @@ void A_camera::worker()
          */
         if (!coord_system)
         {
-            obtain_coord_system();
-            continue;
+            state = camera_state::TERMINATED;
+            return;
         }
 
         /**
