@@ -178,7 +178,7 @@ grpc::Status A_pcl_client::send_point_clouds()
 		 * location is position of rig relative to world
 		 */
 		FTransform::Multiply(&world_trafo, &extrinsic_inv, &location);
-		
+
 		for (auto& p : point_cloud.data)
 		{
 			p = world_trafo.TransformPosition(p);
@@ -188,6 +188,41 @@ grpc::Status A_pcl_client::send_point_clouds()
 				if (!UKismetMathLibrary::IsPointInBoxWithTransform(p, FTransform(obb.rotation, obb.axis_box.GetCenter()), obb.axis_box.GetExtent()))
 					p.Set(NAN, NAN, NAN);
 			}
+		}
+		if (interface_present)
+		{
+			size_t last_valid_idx = 0;
+			size_t valid_points = 0;
+			//size_t last_invalid_idx = point_cloud.data.Num() - 1;
+			for (size_t i = point_cloud.data.Num() - 1; (i + 1) > 0; --i)
+			{
+				if (point_cloud.data[i].ContainsNaN())
+					continue;
+
+				last_valid_idx = i;
+				valid_points = i + 1;
+				break;
+			}
+
+			//we can skip every nan before the last valid index
+			for (size_t i = last_valid_idx; (i + 1) > 0; --i)
+			{
+				if (!point_cloud.data[i].ContainsNaN())
+					continue;
+
+				--valid_points;
+				point_cloud.data.Swap(last_valid_idx, i);
+
+				for (size_t j = i - 1; i > 0 && (j + 1) > 0; --j)
+				{
+					if (point_cloud.data[j].ContainsNaN())
+						continue;
+
+					last_valid_idx = i;
+					break;
+				}
+			}
+			point_cloud.data.SetNum(valid_points);
 		}
 
 		/**
@@ -335,12 +370,16 @@ void A_pcl_client::toggle(bool active)
 	 */
 	if (visualize)
 	{
-		FActorSpawnParameters params;
-		params.bNoFail = true;
-		
-		voxel = GetWorld()->SpawnActor<A_voxel>(params);
-		voxel->set_voxel_size(box_interface_obj &&
-			I_box_interface::Execute_has_box(box_interface_obj) ? 3.f : 10.f);
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
+			{
+				FActorSpawnParameters params;
+				params.bNoFail = true;
+
+				voxel = GetWorld()->SpawnActor<A_voxel>(params);
+				voxel->set_voxel_size(box_interface_obj &&
+					I_box_interface::Execute_has_box(box_interface_obj) ? 3.f : 10.f);
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread)->Wait();
 	}
 	/**
 	 * set state to running and clear depth image buffer
@@ -353,7 +392,7 @@ void A_pcl_client::toggle(bool active)
 	 */
 	{
 		std::unique_lock lock(channel_mutex);
-		send_obb();
+		std::ignore = send_obb();
 		std::list<std::thread> threads;
 		for (size_t i = 0; i < 3; ++i)
 			threads.emplace_back(std::thread(&A_pcl_client::send_point_clouds, this));
@@ -365,7 +404,13 @@ void A_pcl_client::toggle(bool active)
 	 * wake any waiting state changes
 	 */
 	if (voxel)
-		voxel->Destroy();
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
+			{
+				voxel->Destroy();
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread)->Wait();
+	}
 	
 	set_state(state::READY);
 	cv.notify_all();

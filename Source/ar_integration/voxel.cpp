@@ -6,9 +6,6 @@ A_voxel::A_voxel()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	auto root = CreateDefaultSubobject<USceneComponent>("root");
-	SetRootComponent(root);
-
 	/**
 	 * load global mesh and material by engine ref
 	 */
@@ -18,6 +15,9 @@ A_voxel::A_voxel()
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
 		TEXT("Material'/Game/voxel_material.voxel_material'")).Object;
 
+	auto root = CreateDefaultSubobject<USceneComponent>("root");
+	SetRootComponent(root);
+
 	/**
 	 * setup instanced mesh component
 	 */
@@ -26,7 +26,11 @@ A_voxel::A_voxel()
 	instanced->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//instanced->SetFlags(RF_Transactional);
 	instanced->SetMaterial(0, mat);
+	//instanced->SetMobility(EComponentMobility::Movable);
 	this->AddInstanceComponent(instanced);
+
+	instanced->AttachToComponent(root,
+		FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void A_voxel::Tick(float DeltaSeconds)
@@ -36,20 +40,17 @@ void A_voxel::Tick(float DeltaSeconds)
 	/**
 	 * consume to_spawn set
 	 */
-	TSet<FIntVector> swap_spawn;
+	TArray<FTransform> swap_spawn;
 	{
-		std::unique_lock lock(spawn_mtx);
-		Swap(swap_spawn, to_spawn);
+		std::unique_lock lock(voxel_mtx);
+		swap_spawn = all_transforms;
+		//Swap(swap_spawn, to_spawn);
 	}
+	instanced->ClearInstances();
 	/**
 	 * spawn voxels as instance
 	 */
-	for (const auto& p : swap_spawn)
-	{
-		instanced->AddInstance(FTransform(FQuat::Identity,
-			FVector(p) * voxel_size,
-			FVector(0.01 * voxel_size)), true);
-	}
+	instanced->AddInstances(swap_spawn, true);
 }
 
 void A_voxel::BeginDestroy()
@@ -61,7 +62,7 @@ void A_voxel::insert(const TArray<FVector>& points)
 {
 	init = false;
 	
-	TSet<FIntVector> temp_new;
+	//TSet<FIntVector> temp_new;
 	{
 		std::unique_lock lock(voxel_mtx);
 		for (const auto& p : points)
@@ -80,35 +81,68 @@ void A_voxel::insert(const TArray<FVector>& points)
 			if (exists)
 				continue;
 
-			temp_new.Add(index);
+			all_transforms.Add(FTransform(FQuat::Identity,
+				FVector(index) * voxel_size,
+				FVector(0.01 * voxel_size)));
+
+			//temp_new.Add(index);
 		}
 	}
-	std::unique_lock lock(spawn_mtx);
-	to_spawn.Append(temp_new);
+	//std::unique_lock lock(spawn_mtx);
+	//to_spawn.Append(temp_new);
 }
-
-void A_voxel::insert_point(const FVector& point)
-{
-	init = false;
-
-	/**
-	 * calculate index of point
-	 * and insert if not present
-	 */
-	FIntVector index = FIntVector(
-		(point + point.GetSignVector() * voxel_size * 0.5f) / voxel_size
-	);
-	bool exists = false;
-	{
-		std::unique_lock lock(voxel_mtx);
-		voxels.Add(index, &exists);
-	}
-	if (exists)
-		return;
-
-	std::unique_lock lock(spawn_mtx);
-	to_spawn.Add(index);
-}
+//
+//void A_voxel::insert_sync(const TArray<FVector>& points)
+//{
+//	init = false;
+//
+//	//std::scoped_lock lock{ voxel_mtx, spawn_mtx };
+//	TArray<FTransform> instance_transforms;
+//	for (const auto& p : points)
+//	{
+//		if (p.ContainsNaN())
+//			continue;
+//		/**
+//		 * calculate index vector of points
+//		 * and insert if not present
+//		 */
+//		FIntVector index = FIntVector(
+//			(p + p.GetSignVector() * voxel_size * 0.5f) / voxel_size
+//		);
+//		bool exists = false;
+//		voxels.Add(index, &exists);
+//		if (exists)
+//			continue;
+//
+//		instance_transforms.Emplace(FTransform(FQuat::Identity,
+//			FVector(index) * voxel_size,
+//			FVector(0.01 * voxel_size)));
+//	}
+//	instanced->AddInstances(instance_transforms, false, true);
+//}
+//
+//void A_voxel::insert_point(const FVector& point)
+//{
+//	init = false;
+//
+//	/**
+//	 * calculate index of point
+//	 * and insert if not present
+//	 */
+//	FIntVector index = FIntVector(
+//		(point + point.GetSignVector() * voxel_size * 0.5f) / voxel_size
+//	);
+//	bool exists = false;
+//	{
+//		std::unique_lock lock(voxel_mtx);
+//		voxels.Add(index, &exists);
+//	}
+//	if (exists)
+//		return;
+//
+//	std::unique_lock lock(spawn_mtx);
+//	to_spawn.Add(index);
+//}
 
 void A_voxel::set_voxel_size(float size)
 {
@@ -116,3 +150,15 @@ void A_voxel::set_voxel_size(float size)
 	if (init && size > 0.f)
 		voxel_size = size;
 }
+/*
+void A_voxel::clear_all()
+{
+	std::scoped_lock lock{spawn_mtx, voxel_mtx};
+
+	to_spawn.Empty();
+	voxels.Empty();
+
+	instanced->ClearInstances();
+	init = true;
+}
+*/
