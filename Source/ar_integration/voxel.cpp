@@ -13,7 +13,7 @@ A_voxel::A_voxel()
 		TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")).Object;
 
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
-		TEXT("Material'/Game/voxel_material.voxel_material'")).Object;
+		TEXT("Material'/Game/vox_mat.vox_mat'")).Object;
 
 	auto root = CreateDefaultSubobject<USceneComponent>("root");
 	SetRootComponent(root);
@@ -23,6 +23,8 @@ A_voxel::A_voxel()
 	 */
 	instanced = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("instance_component"));
 	instanced->SetStaticMesh(mesh);
+	instanced->bAllowCullDistanceVolume = false;
+	instanced->bDisableCollision = true;
 	instanced->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//instanced->SetFlags(RF_Transactional);
 	instanced->SetMaterial(0, mat);
@@ -50,7 +52,7 @@ void A_voxel::Tick(float DeltaSeconds)
 	/**
 	 * spawn voxels as instance
 	 */
-	instanced->AddInstances(swap_spawn, true);
+	instanced->AddInstances(swap_spawn, false);
 }
 
 void A_voxel::BeginDestroy()

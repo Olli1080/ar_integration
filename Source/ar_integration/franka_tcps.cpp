@@ -13,7 +13,7 @@ A_franka_tcps::A_franka_tcps()
 		TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")).Object;
 
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
-		TEXT("Material'/Game/voxel_material_opaque.voxel_material_opaque'")).Object;
+		TEXT("Material'/Game/vox_mat.vox_mat'")).Object;
 
 	auto root = CreateDefaultSubobject<USceneComponent>("root");
 	SetRootComponent(root);

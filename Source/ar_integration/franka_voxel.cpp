@@ -14,7 +14,7 @@ A_franka_voxel::A_franka_voxel()
 		TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")).Object;
 
 	mat = ConstructorHelpers::FObjectFinder<UMaterial>(
-		TEXT("Material'/Game/voxel_material_opaque.voxel_material_opaque'")).Object;
+		TEXT("Material'/Game/vox_mat.vox_mat'")).Object;
 
 	auto root = CreateDefaultSubobject<USceneComponent>("root");
 	SetRootComponent(root);
@@ -24,6 +24,8 @@ A_franka_voxel::A_franka_voxel()
 	 */
 	instanced = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("instance_component"));
 	instanced->SetStaticMesh(mesh);
+	instanced->bAllowCullDistanceVolume = false;
+	instanced->bDisableCollision = true;
 	instanced->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//instanced->SetFlags(RF_Transactional);
 	instanced->SetMaterial(0, mat);
