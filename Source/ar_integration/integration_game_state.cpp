@@ -178,17 +178,8 @@ void A_integration_game_state::change_channel(FString target)
 #endif
 	{
 		sync_and_subscribe();
-#if PLATFORM_HOLOLENS
-		hand_tracking_client->update_local_transform(anchor_pin->GetLocalToWorldTransform().Inverse());
-#endif
-		hand_tracking_client->async_transmit_data();
-
-		franka_client->async_transmit_data();
-		franka_tcp_client->async_transmit_data();
-		//franka_joint_client->async_transmit_data();
-		franka_joint_sync_client->async_transmit_data();
 	}
-
+	
 	on_channel_change.Broadcast(channel);
 }
 
@@ -253,28 +244,42 @@ void A_integration_game_state::update_anchor_transform(
 		/**
 		 * delete anchor and unseat workspace component
 		 */
-		UARBlueprintLibrary::RemoveARPinFromLocalStore(pin_save_name);
-		UARBlueprintLibrary::UnpinComponent(pin_component);
+		//UARBlueprintLibrary::UnpinComponent(pin_component);
 		UARBlueprintLibrary::RemovePin(anchor_pin);
+		UARBlueprintLibrary::RemoveARPinFromLocalStore(pin_save_name);
 	}
 	/**
 	 * reseat pin_component with new anchor transform
 	 * save new pin
 	 */
 	anchor_pin = UARBlueprintLibrary::PinComponent(pin_component, anchor_transform);
-	hand_tracking_client->update_local_transform(anchor_transform);
-	hand_tracking_client->async_transmit_data();
 	UARBlueprintLibrary::SaveARPinToLocalStore(pin_save_name, anchor_pin);
+
+	sync_and_subscribe(true);
 }
 
-void A_integration_game_state::sync_and_subscribe()
+void A_integration_game_state::sync_and_subscribe(bool forced)
 {
-	if (!object_client || synced) return;
-	
+	if (!forced && synced) return;
+
 	synced = true;
-	object_client->sync_objects();
-	object_client->async_subscribe_objects();
-	object_client->async_subscribe_delete_objects();
+
+	if (object_client)
+	{
+		object_client->sync_objects();
+		object_client->async_subscribe_objects();
+		object_client->async_subscribe_delete_objects();
+	}
+
+#if PLATFORM_HOLOLENS
+	hand_tracking_client->update_local_transform(anchor_pin->GetLocalToWorldTransform().Inverse());
+#endif
+	hand_tracking_client->async_transmit_data();
+
+	franka_client->async_transmit_data();
+	franka_tcp_client->async_transmit_data();
+	//franka_joint_client->async_transmit_data();
+	franka_joint_sync_client->async_transmit_data();
 }
 
 void A_integration_game_state::update_meshes(const TSet<FString>& pending_proto)

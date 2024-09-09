@@ -48,15 +48,19 @@ void A_franka_voxel::set_voxels(const F_voxel_data& data)
 {
 	instanced->ClearInstances();
 	instanced->SetRelativeTransform(data.robot_origin.Inverse() * FTransform(FQuat(FVector(0., 0., 1.), UE_PI / 2.f)));
-	
+
+	TArray<FTransform> temp;
+	temp.Reserve(data.indices.Num());
+
 	for (const auto& p : data.indices)
 	{
-		instanced->AddInstance(FTransform(FQuat::Identity,
+		temp.Add(FTransform(FQuat::Identity,
 			p * data.voxel_side_length,
 			//Scale is multiplied by 0.01 because the default cube is
 			//1 meter in size instead of a centimeter
 			FVector(0.01 * data.voxel_side_length)));
 	}
+	instanced->AddInstances(temp, false);
 }
 
 void A_franka_voxel::clear_Implementation()
