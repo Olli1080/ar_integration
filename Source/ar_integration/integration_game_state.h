@@ -163,7 +163,7 @@ public:
 	 * if not already synced and if object_client is valid
 	 */
 	UFUNCTION(BlueprintCallable)
-	void sync_and_subscribe();
+	void sync_and_subscribe(bool forced = false);
 
 	UPROPERTY(BlueprintAssignable)
 	F_post_actors_delegate on_post_actors;
