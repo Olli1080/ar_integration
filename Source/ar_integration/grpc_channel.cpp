@@ -11,7 +11,7 @@ void U_grpc_channel::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-bool U_grpc_channel::construct(FString target, int32 timeout)
+bool U_grpc_channel::construct(FString target, int32 timeout, int32 retries)
 {
 	/**
 	 * create channel with any credentials
@@ -22,8 +22,18 @@ bool U_grpc_channel::construct(FString target, int32 timeout)
 	const auto temp = CreateCustomChannel(std::string(TCHAR_TO_UTF8(*target)),
 		grpc::InsecureChannelCredentials(), cArgs);
 
-	const bool established = temp->WaitForConnected(std::chrono::system_clock::now() +
-		std::chrono::milliseconds(static_cast<long long>(timeout)));
+	bool established = false;
+	while (!established)
+	{
+		if (retries > 0)
+			--retries;
+
+		established = temp->WaitForConnected(std::chrono::system_clock::now() +
+			std::chrono::milliseconds(static_cast<long long>(timeout)));
+
+		if (established || retries == 0)
+			break;
+	}
 
 	if (established)
 	{

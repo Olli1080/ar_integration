@@ -27,12 +27,17 @@ A_integration_game_state::A_integration_game_state()
 	channel = NewObject<U_grpc_channel>();
 
 	pin_component = CreateDefaultSubobject<USceneComponent>("pin_component");
+	correction_component = CreateDefaultSubobject<USceneComponent>("correction_component");
 }
 
 void A_integration_game_state::BeginPlay()
 {
 	Super::BeginPlay();
 	pin_component->RegisterComponent();
+
+	//correction_component->RegisterComponent();
+	correction_component->AttachToComponent(pin_component, FAttachmentTransformRules::KeepRelativeTransform);
+	correction_component->SetRelativeTransform(FTransform(FVector(0., 1.3, 0.)));
 	/*pin_component->AttachToComponent(GetRootComponent(),
 		FAttachmentTransformRules::KeepWorldTransform);*/
 
@@ -50,11 +55,11 @@ void A_integration_game_state::BeginPlay()
 	franka = GetWorld()->SpawnActor<AFranka>(params);
 	franka_controller_->set_robot(franka);
 	
-	franka_voxel->AttachToComponent(pin_component,
+	franka_voxel->AttachToComponent(correction_component,
 		FAttachmentTransformRules::KeepRelativeTransform);
-	franka_tcps->AttachToComponent(pin_component,
+	franka_tcps->AttachToComponent(correction_component,
 		FAttachmentTransformRules::KeepRelativeTransform);
-	franka->AttachToComponent(pin_component,
+	franka->AttachToComponent(correction_component,
 		FAttachmentTransformRules::KeepRelativeTransform);
 
 	franka_client->on_voxel_data.AddDynamic(this, &A_integration_game_state::handle_voxels);
@@ -110,11 +115,11 @@ void A_integration_game_state::Tick(float DeltaSeconds)
 	franka_controller_->Tick(DeltaSeconds);
 }
 
-void A_integration_game_state::change_channel(FString target)
+void A_integration_game_state::change_channel(FString target, int32 retries)
 {
 	if (target == old_target) return;
 	
-	if (!channel->construct(target)) return;
+	if (!channel->construct(target, 400, retries)) return;
 
 	old_target = target;
 	synced = false;
@@ -408,7 +413,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 	const FString id = get_object_instance_id(instance);
 	A_procedural_mesh_actor* actor = find_or_spawn(id);
 	f(actor);
-	actor->AttachToComponent(pin_component,
+	actor->AttachToComponent(correction_component,
 		FAttachmentTransformRules::KeepRelativeTransform);
 
 	actor->SetActorRelativeTransform(trafo);

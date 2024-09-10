@@ -13,6 +13,10 @@ public class ar_integration : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "Research", "Grpc", "AugmentedReality", "ProceduralMeshComponent", "HeadMountedDisplay", "UXTools", "ProceduralMeshComponent", "XRBase" });
 
+        //PublicDefinitions.Add("WITH_POINTCLOUD");
+
+
+
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 

@@ -67,7 +67,7 @@ public:
 	 * @attend emits @ref{on_channel_change} after all internal client channels are set
 	 */
 	UFUNCTION(BlueprintCallable)
-	void change_channel(FString target);
+	void change_channel(FString target, int32 retries = 1);
 
 	/**
 	 * signal emitted on valid change of channel
@@ -168,6 +168,14 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	F_post_actors_delegate on_post_actors;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool enable_registration =
+#ifdef WITH_POINTCLOUD
+		true;
+#else
+		false;
+#endif
+
 private:
 
 	void update_meshes(const TSet<FString>& pending_proto);
@@ -213,6 +221,9 @@ private:
 	UPROPERTY()
 	USceneComponent* pin_component;
 
+	UPROPERTY()
+	USceneComponent* correction_component;
+
 	/**
 	 * Map of cached meshes by their name
 	 */
@@ -254,7 +265,7 @@ private:
 	template<typename T>
 	struct deduce_type
 	{
-		using type = typename std::remove_const<typename std::remove_reference<T>::type>::type;
+		using type = std::remove_const_t<std::remove_reference_t<T>>;
 	};
 
 	/**

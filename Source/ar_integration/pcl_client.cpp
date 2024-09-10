@@ -69,7 +69,11 @@ grpc::Status pcl_transmission_draco::end_data()
 
 A_pcl_client::A_pcl_client()
 {
+#ifdef WITH_POINTCLOUD
 	PrimaryActorTick.bCanEverTick = true;
+#else
+	PrimaryActorTick.bCanEverTick = false;
+#endif
 }
 
 // Called when the game starts or when spawned
@@ -431,6 +435,7 @@ void A_pcl_client::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+#ifdef WITH_POINTCLOUD
 	//FActorSpawnParameters params;
 	//params.bNoFail = true;
 
@@ -449,4 +454,5 @@ void A_pcl_client::Tick(float DeltaTime)
 		
 		cv.notify_all();
 	}
+#endif
 }

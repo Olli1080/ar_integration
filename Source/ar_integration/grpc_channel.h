@@ -47,7 +47,7 @@ public:
 	 * @attend check if construction worked with @ref{connected}
 	 */
 	UFUNCTION(BlueprintCallable)
-	bool construct(FString target, int32 timeout = 400);
+	bool construct(FString target, int32 timeout = 400, int32 retries = 1);
 
 	UFUNCTION(BlueprintCallable, meta=(DeprecatedNode, DeprecationMessage="May soon be replaced!"))
 	bool connected() const;
