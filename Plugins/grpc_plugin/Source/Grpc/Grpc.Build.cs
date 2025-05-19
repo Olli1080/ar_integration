@@ -17,7 +17,7 @@ public class Grpc : ModuleRules
             this.root = root;
         }
 
-        private string root;
+        public string root;
 
         public string exe => Path.Combine(root, "vcpkg.exe");
         public string installed => Path.Combine(root, "installed");
@@ -134,7 +134,7 @@ public class Grpc : ModuleRules
         Regex reg = new Regex(@"^([^* :\[\]]*)(?:\[[^\]]*\])?:(.*)", RegexOptions.Multiline);
         HashSet<string> Packages = new HashSet<string>();
 
-        string unparsed = runProgram(vcpkgPaths.basePaths.exe, "depend-info " + package + ":" + vcpkgPaths.tripletName, true);
+        string unparsed = runProgram(vcpkgPaths.basePaths.exe, "--vcpkg-root " + vcpkgPaths.basePaths.root + " depend-info " + package + ":" + vcpkgPaths.tripletName, true);
         //Console.WriteLine(unparsed);
         MatchCollection MatchCollection = reg.Matches(unparsed);
 
