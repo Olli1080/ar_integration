@@ -130,14 +130,14 @@ public class Grpc : ModuleRules
 
     private HashSet<string> parseDepencies(VcpkgPaths vcpkgPaths, string package)
     {
-        //Regex reg = new Regex(@"^([^:\[]*?)(?:\[[^\]]*?\])??:(?:(?: ([^ ,]*?),)*? ([^ ]*?))??\r$", RegexOptions.Multiline);
         Regex reg = new Regex(@"^([^* :\[\]]*)(?:\[[^\]]*\])?:(.*)", RegexOptions.Multiline);
         HashSet<string> Packages = new HashSet<string>();
 
         string unparsed = runProgram(vcpkgPaths.basePaths.exe, "--vcpkg-root " + vcpkgPaths.basePaths.root + " depend-info " + package + ":" + vcpkgPaths.tripletName, true);
-        //Console.WriteLine(unparsed);
-        MatchCollection MatchCollection = reg.Matches(unparsed);
+        unparsed = unparsed.Replace(":" + vcpkgPaths.tripletName, "");
 
+        MatchCollection MatchCollection = reg.Matches(unparsed);
+        Console.WriteLine(unparsed);
         foreach (Match match in MatchCollection)
         {
             Packages.Add(match.Groups[1].Value);
@@ -332,7 +332,9 @@ public class Grpc : ModuleRules
         var linesToKeep = File.ReadLines(paths.tripletFile).Where(line => !line.Contains("VCPKG_BUILD_TYPE"));
 
         File.WriteAllLines(tempFile, linesToKeep);
-        File.AppendAllLines(tempFile, new string[] { "set(VCPKG_BUILD_TYPE release)" });
+        File.AppendAllLines(tempFile, new string[] { 
+            "set(VCPKG_BUILD_TYPE release)"
+        });
         
         File.Move(tempFile, paths.tripletFile, true);
     }
@@ -370,7 +372,7 @@ public class Grpc : ModuleRules
         if (mHostTriplet != mTargetTriplet)
             makeReleaseOnly(TargetPaths);
 
-        string VcpkgCmd = "install --host-triplet=" + mHostTriplet;
+        string VcpkgCmd = "install --recurse --overlay-ports=" + Path.GetFullPath(Path.Combine(PluginDirectory, "Source", "overlay")) + " --host-triplet=" + mHostTriplet;
         string InstallMessage = "Installing [";
         HashSet<string> SubPackages = new HashSet<string>();
         foreach (var Package in Packages)

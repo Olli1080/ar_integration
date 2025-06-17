@@ -17,7 +17,7 @@
 
 #ifndef WORKAROUND_SYMBOL_MEMORY_BARRIER
 #define WORKAROUND_SYMBOL_MEMORY_BARRIER
-static void MemoryBarrier() {}
+//static void MemoryBarrier() {}
 #endif
 
 #pragma push_macro("InterlockedCompareExchange64") 
