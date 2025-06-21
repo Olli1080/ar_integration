@@ -30,3 +30,11 @@
 10. Enter the IP address of the HoloLens in Edge browser to get the web interface: Views -> Apps -> Click "Allow me to select framework packages" and "Choose File" -> Select the files from step 10.4 (in the first step "ar_integration.appxbundle" and in the second step "Microsoft.VCLibs.arm64.14.00.appx")
 11. Start the main application on the host
 12. Start ArSurvey on the HoloLens. 
+
+# Development (Advanced)
+- If you want to see something in the editor you will want to click the following menu `Create -> Only Create Lighting`
+- Every time you make changes to the code you have to
+    1. Compile the changes for arm64 HoloLens in Visual Studio
+    2. Package for HoloLens in Editor
+    3. Upload the new package via device portal
+    4. Compile or Hot-Reload the changes for development editor x64, to keep the environments behaviour in sync (optional)
