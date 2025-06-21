@@ -26,7 +26,8 @@
     1. Edit -> Project Settings -> [On the left of the dialog window] HoloLens under Platforms -> Signing Certificate under Packaging -> Click Generate. Under Toolchain select the installed Windows 10 SDK Version.
     2. Tools -> Find Blueprints -> Find Blueprints 1 -> Enter "192.168.100.100" and search -> double click the first match -> change the IP address to the one of the host
     3. Platforms (dropdown below navigation bar) -> Hololens -> Select "Shipping" and click "Cook Content" (redo this step if it fails)
-    4. Platforms -> Hololens -> Click "Package Project". Select or create "Binaries" as destination folder in the ar_integration repository.
+    4. Create signing keys for the packaging by `Project Properties -> Platforms -> HoloLens -> Signing Certificate -> Generate New (You can leave the password empty)`
+    5. Platforms -> Hololens -> Click "Package Project". Select the project root or create some folder as destination folder in the ar_integration repository.
 10. Enter the IP address of the HoloLens in Edge browser to get the web interface: Views -> Apps -> Click "Allow me to select framework packages" and "Choose File" -> Select the files from step 10.4 (in the first step "ar_integration.appxbundle" and in the second step "Microsoft.VCLibs.arm64.14.00.appx")
 11. Start the main application on the host
 12. Start ArSurvey on the HoloLens. 
