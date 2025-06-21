@@ -8,22 +8,18 @@
  * THIS HEADER HAS TO BE INCLUDED PRIOR TO THE GENERATED HEADERS
  */
 
-#pragma warning(push)
-#pragma warning (disable : 4800 4125 4647 4668 4582 4583 4946 4996)
-
 #if (defined(PLATFORM_HOLOLENS) | defined(PLATFORM_WINDOWS))
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include "Windows/MinWindows.h"
+#include "Windows/WindowsHWrapper.h"
+#include "Windows/AllowWindowsPlatformAtomics.h"
+#include <winnt.h>
 
-#ifndef WORKAROUND_SYMBOL_MEMORY_BARRIER
-#define WORKAROUND_SYMBOL_MEMORY_BARRIER
-//static void MemoryBarrier() {}
+#ifndef MEMORY_BARRIER
+#define MEMORY_BARRIER
+static void MemoryBarrier() {}
 #endif
 
-#pragma push_macro("InterlockedCompareExchange64") 
-#ifdef InterlockedCompareExchange64
-#undef InterlockedCompareExchange64 
-#endif 
-#define InterlockedCompareExchange64 _InterlockedCompareExchange64
+THIRD_PARTY_INCLUDES_START
+#pragma warning(push)
+#pragma warning (disable : 4800 4125 4647 4668 4582 4583 4946 4996)
 #endif
 #endif

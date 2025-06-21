@@ -8,17 +8,15 @@
  */
 
 #if (defined(PLATFORM_HOLOLENS) | defined(PLATFORM_WINDOWS))
-
-#pragma pop_macro("InterlockedCompareExchange64")
-#include "Windows/HideWindowsPlatformTypes.h"
+#pragma warning(pop)
+THIRD_PARTY_INCLUDES_END
+#include "Windows/HideWindowsPlatformAtomics.h"
 #endif
-
-#pragma warning( pop )
 
 #undef GRPC_INCLUDE_BEGIN
 
-#elif
+#else
 
-#pragma message "Not matching begin header"
+#pragma message("Not matching begin header")
 
 #endif

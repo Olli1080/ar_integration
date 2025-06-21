@@ -132,12 +132,12 @@ public class Grpc : ModuleRules
     {
         Regex reg = new Regex(@"^([^* :\[\]]*)(?:\[[^\]]*\])?:(.*)", RegexOptions.Multiline);
         HashSet<string> Packages = new HashSet<string>();
-
-        string unparsed = runProgram(vcpkgPaths.basePaths.exe, "--vcpkg-root " + vcpkgPaths.basePaths.root + " depend-info " + package + ":" + vcpkgPaths.tripletName, true);
+        
+        string unparsed = runProgram(vcpkgPaths.basePaths.exe, "--overlay-ports=" + Path.GetFullPath(Path.Combine(PluginDirectory, "Source", "overlay")) + " --vcpkg-root " + vcpkgPaths.basePaths.root + " depend-info " + package + ":" + vcpkgPaths.tripletName, true);
+        //Console.WriteLine(unparsed);
         unparsed = unparsed.Replace(":" + vcpkgPaths.tripletName, "");
 
         MatchCollection MatchCollection = reg.Matches(unparsed);
-        Console.WriteLine(unparsed);
         foreach (Match match in MatchCollection)
         {
             Packages.Add(match.Groups[1].Value);
@@ -172,6 +172,13 @@ public class Grpc : ModuleRules
         string[] files = Directory.GetFiles(vcpkgPaths.info);
         List<string> InstalledFiles = new List<string>();
 
+        Console.WriteLine("Packages: [");
+        foreach (string Package in packages)
+        {
+            Console.WriteLine(Package);
+        }
+        Console.WriteLine("]");
+
         foreach (string Package in packages)
         {
             Regex regex = new Regex("^" + Package + @"_[^_]*?_" + vcpkgPaths.tripletName + @"\.list$");
@@ -204,13 +211,13 @@ public class Grpc : ModuleRules
             throw new BuildException("Linking directory failed: " + src + " -> " + target);
     }
     */
-    private static void checkInstalled(string path, Action install)
+    private static void checkInstalled(string path, Action install, bool precheck = true, bool postcheck = true)
     {
-        if (File.Exists(path)) return;
+        if (precheck && File.Exists(path)) return;
 
         install();
 
-        if (!File.Exists(path))
+        if (postcheck && !File.Exists(path))
             throw new BuildException("Failed at install of: " + Path.GetFileName(path));
     }
 
@@ -291,7 +298,7 @@ public class Grpc : ModuleRules
         foreach (FileInfo file in new DirectoryInfo(generatedDir).GetFiles())
         {
             
-            if (file.Extension != ".cc")
+            if (!file.FullName.EndsWith(".cc"))
             {
                 //Console.WriteLine("Gen header: \t" + file.Name);
                 //file.CopyTo(Path.Combine(outSource, file.Name), true);
@@ -365,14 +372,17 @@ public class Grpc : ModuleRules
         checkInstalled(basePaths.exe, () =>
         {
             Console.WriteLine("Bootstrapping vcpkg");
-            runProgram(basePaths.bootstrap, "");
-        });
+            runProgram(basePaths.bootstrap, "-disableMetrics");
+        }, false);
+
+        string VcpkgCmd0 = "install --recurse --overlay-ports=" + Path.GetFullPath(Path.Combine(PluginDirectory, "Source", "overlay")) + " --host-triplet=" + mHostTriplet + " --vcpkg-root " + basePaths.root + " vcpkg-cmake";
+        runProgram(basePaths.exe, VcpkgCmd0);
 
         makeReleaseOnly(HostPaths);
         if (mHostTriplet != mTargetTriplet)
             makeReleaseOnly(TargetPaths);
 
-        string VcpkgCmd = "install --recurse --overlay-ports=" + Path.GetFullPath(Path.Combine(PluginDirectory, "Source", "overlay")) + " --host-triplet=" + mHostTriplet;
+        string VcpkgCmd = "install --recurse --overlay-ports=" + Path.GetFullPath(Path.Combine(PluginDirectory, "Source", "overlay")) + " --host-triplet=" + mHostTriplet + " --vcpkg-root " + basePaths.root;
         string InstallMessage = "Installing [";
         HashSet<string> SubPackages = new HashSet<string>();
         foreach (var Package in Packages)
