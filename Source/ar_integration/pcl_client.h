@@ -24,12 +24,13 @@ public:
 
 	virtual ~pcl_transmission() = default;
 	
-	virtual void transmit_data(generated::maybe_matrix& response) = 0;
+	virtual void transmit_data(generated::ICP_Result& response) = 0;
 	virtual bool send_data(const F_point_cloud& pcl) = 0;
 	virtual grpc::Status end_data() = 0;
 
 protected:
 
+	bool first = true;
 	grpc::ClientContext context;
 };
 
@@ -40,16 +41,16 @@ public:
 	pcl_transmission_vertices(std::unique_ptr<generated::pcl_com::Stub>& stub);
 	virtual ~pcl_transmission_vertices() override = default;
 
-	virtual void transmit_data(generated::maybe_matrix& response) override;
+	virtual void transmit_data(generated::ICP_Result& response) override;
 	virtual bool send_data(const F_point_cloud& pcl) override;
 	virtual grpc::Status end_data() override;
 
 private:
 
 	std::unique_ptr<generated::pcl_com::Stub>& stub;
-	std::unique_ptr<grpc::ClientWriter<generated::pcl_data>> stream;
+	std::unique_ptr<grpc::ClientWriter<generated::Pcl_Data_Meta>> stream;
 };
-
+/*
 class pcl_transmission_draco : public pcl_transmission
 {
 public:
@@ -57,7 +58,7 @@ public:
 	pcl_transmission_draco(std::unique_ptr<generated::pcl_com::Stub>& stub);
 	virtual ~pcl_transmission_draco() override = default;
 
-	virtual void transmit_data(generated::maybe_matrix& response) override;
+	virtual void transmit_data(generated::ICP_Result& response) override;
 	virtual bool send_data(const F_point_cloud& pcl) override;
 	virtual grpc::Status end_data() override;
 
@@ -65,7 +66,7 @@ private:
 
 	std::unique_ptr<generated::pcl_com::Stub>& stub;
 	std::unique_ptr<grpc::ClientWriter<generated::draco_data>> stream;
-};
+};*/
 
 /**
  * @class U_box_interface
@@ -221,6 +222,8 @@ public:
 	
 private:
 
+	void state_change_sync(state old_state, state new_state) const;
+
 	/**
 	 * @var voxel actor visualizing voxels
 	 */
@@ -261,6 +264,13 @@ private:
 	 * transmitted points are in meters
 	 */
 	grpc::Status send_point_clouds();
+
+	/**
+	 * @brief 
+	 * @param p point to be checked against filter
+	 * @return true if point got filtered and p is set to NAN else nothing happens
+	 */
+	bool filter_point(FVector& p) const;
 
 	/**
 	 * transmits obb (in meters) of box_interface if present

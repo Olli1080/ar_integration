@@ -1,6 +1,5 @@
 #include "integration_game_state.h"
-
-#include "HeadMountedDisplayFunctionLibrary.h"
+//#include "HeadMountedDisplayFunctionLibrary.h"
 
 template<typename ... Ts>
 struct Overload : Ts ... {
@@ -8,10 +7,11 @@ struct Overload : Ts ... {
 };
 template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
-static constexpr float xr_factor = 100.f;
-
 A_integration_game_state::A_integration_game_state()
 {
+	auto root = CreateDefaultSubobject<USceneComponent>("root");
+	SetRootComponent(root);
+
 	PrimaryActorTick.bCanEverTick = true;
 
 	debug_client = NewObject<U_debug_client>();
@@ -19,17 +19,25 @@ A_integration_game_state::A_integration_game_state()
 
 	franka_client = NewObject<U_franka_client>();
 	franka_tcp_client = NewObject<U_franka_tcp_client>();
-	franka_joint_client = NewObject<U_franka_joint_client>();
+	//franka_joint_client = NewObject<U_franka_joint_client>();
+	franka_joint_sync_client = NewObject<U_franka_joint_sync_client>();
+
+	franka_controller_ = NewObject<U_franka_shadow_controller>();
 
 	channel = NewObject<U_grpc_channel>();
 
 	pin_component = CreateDefaultSubobject<USceneComponent>("pin_component");
+	correction_component = CreateDefaultSubobject<USceneComponent>("correction_component");
 }
 
 void A_integration_game_state::BeginPlay()
 {
 	Super::BeginPlay();
 	pin_component->RegisterComponent();
+
+	//correction_component->RegisterComponent();
+	correction_component->AttachToComponent(pin_component, FAttachmentTransformRules::KeepRelativeTransform);
+	correction_component->SetRelativeTransform(FTransform(FQuat{FRotator{0., 2., 0.}}, FVector(-0.4, 1.3, 0.), FVector::One()));
 	/*pin_component->AttachToComponent(GetRootComponent(),
 		FAttachmentTransformRules::KeepWorldTransform);*/
 
@@ -37,17 +45,33 @@ void A_integration_game_state::BeginPlay()
 	params.bNoFail = true;
 
 	pcl_client = GetWorld()->SpawnActor<A_pcl_client>(params);
-	pcl_client->visualize = false;
+	//pcl_client->visualize = false;
 
 	hand_tracking_client = GetWorld()->SpawnActor<A_hand_tracking_client>(params);
 
 	franka_voxel = GetWorld()->SpawnActor<A_franka_voxel>(params);
 	franka_tcps = GetWorld()->SpawnActor<A_franka_tcps>(params);
+
 	franka = GetWorld()->SpawnActor<AFranka>(params);
+	franka_controller_->set_robot(franka);
+	
+	franka_voxel->AttachToComponent(correction_component,
+		FAttachmentTransformRules::KeepRelativeTransform);
+	franka_tcps->AttachToComponent(correction_component,
+		FAttachmentTransformRules::KeepRelativeTransform);
+	franka->AttachToComponent(correction_component,
+		FAttachmentTransformRules::KeepRelativeTransform);
 
 	franka_client->on_voxel_data.AddDynamic(this, &A_integration_game_state::handle_voxels);
+	franka_client->on_visual_change.AddDynamic(franka_voxel, &I_franka_Interface::set_visibility);
+
 	franka_tcp_client->on_tcp_data.AddDynamic(this, &A_integration_game_state::handle_tcps);
-	franka_joint_client->on_joint_data.AddDynamic(this, &A_integration_game_state::handle_joints);
+	franka_tcp_client->on_visual_change.AddDynamic(franka_tcps, &I_franka_Interface::set_visibility);
+
+	franka_joint_sync_client->on_sync_joint_data.AddDynamic(this, &A_integration_game_state::handle_sync_joints);
+	franka_joint_sync_client->on_visual_change.AddDynamic(franka_controller_, &I_franka_Interface::set_visibility);
+
+	//franka_joint_client->on_joint_data.AddDynamic(this, &A_integration_game_state::handle_joints);
 
 	on_post_actors.Broadcast();
 }
@@ -59,7 +83,10 @@ void A_integration_game_state::Tick(float DeltaSeconds)
 	init();
 	
 	std::unique_lock top_lock(anchor_mutex);
+
+#if PLATFORM_HOLOLENS
 	if (!anchor_pin) return;
+#endif
 	
 	TArray<FString> to_delete;
 	TArray<F_object_instance> to_set;
@@ -79,18 +106,20 @@ void A_integration_game_state::Tick(float DeltaSeconds)
 
 	to_set = to_set.FilterByPredicate([&to_delete](const F_object_instance& instance)
 		{
-			return to_delete.Contains(get_object_instance_id(instance));
+			return !to_delete.Contains(get_object_instance_id(instance));
 		});
 
 	for (const auto& set : to_set)
 		handle_object_instance(set);
+
+	franka_controller_->Tick(DeltaSeconds);
 }
 
-void A_integration_game_state::change_channel(FString target)
+void A_integration_game_state::change_channel(FString target, int32 retries)
 {
 	if (target == old_target) return;
 	
-	if (!channel->construct(target)) return;
+	if (!channel->construct(target, 400, retries)) return;
 
 	old_target = target;
 	synced = false;
@@ -103,7 +132,8 @@ void A_integration_game_state::change_channel(FString target)
 	I_Base_Client_Interface::Execute_set_channel(debug_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(franka_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(franka_tcp_client, channel);
-	I_Base_Client_Interface::Execute_set_channel(franka_joint_client, channel);
+	//I_Base_Client_Interface::Execute_set_channel(franka_joint_client, channel);
+	I_Base_Client_Interface::Execute_set_channel(franka_joint_sync_client, channel);
 	I_Base_Client_Interface::Execute_set_channel(pcl_client, channel);
 	/**
 	 * create new object_client and bind all the signals to
@@ -148,16 +178,13 @@ void A_integration_game_state::change_channel(FString target)
 	/**
 	 * resync if anchor is set
 	 */
+#if PLATFORM_HOLOLENS
 	if (anchor_pin)
+#endif
 	{
 		sync_and_subscribe();
-		hand_tracking_client->update_local_transform(anchor_pin->GetLocalToWorldTransform().Inverse());
-		hand_tracking_client->async_transmit_data();
 	}
-	franka_client->async_transmit_data();
-	franka_tcp_client->async_transmit_data();
-	franka_joint_client->async_transmit_data();
-
+	
 	on_channel_change.Broadcast(channel);
 }
 
@@ -168,16 +195,13 @@ void A_integration_game_state::spawn_obj_proto(const FString& name)
 	
 	const auto mesh = meshes.Find(prototype->mesh_name);
 	if (!mesh) return;
-	
-	const auto& scale = prototype->bounding_box.GetExtent() *
-		UHeadMountedDisplayFunctionLibrary::GetWorldToMetersScale(GetWorld());
 
 	FActorSpawnParameters spawnParams;
 	spawnParams.bNoFail = true;
 		
 	const auto newActor = GetWorld()->SpawnActor<A_procedural_mesh_actor>(
 		A_procedural_mesh_actor::StaticClass(), 
-		FTransform(FQuat::Identity, FVector::ZeroVector, scale),
+		FTransform(FQuat::Identity, FVector::ZeroVector, prototype->bounding_box.GetExtent()),
 		spawnParams);
 	
 	newActor->set_from_data(create_proc_mesh_data(*prototype, *mesh));
@@ -225,28 +249,42 @@ void A_integration_game_state::update_anchor_transform(
 		/**
 		 * delete anchor and unseat workspace component
 		 */
-		UARBlueprintLibrary::RemoveARPinFromLocalStore(pin_save_name);
-		UARBlueprintLibrary::UnpinComponent(pin_component);
+		//UARBlueprintLibrary::UnpinComponent(pin_component);
 		UARBlueprintLibrary::RemovePin(anchor_pin);
+		UARBlueprintLibrary::RemoveARPinFromLocalStore(pin_save_name);
 	}
 	/**
 	 * reseat pin_component with new anchor transform
 	 * save new pin
 	 */
 	anchor_pin = UARBlueprintLibrary::PinComponent(pin_component, anchor_transform);
-	hand_tracking_client->update_local_transform(anchor_transform);
-	hand_tracking_client->async_transmit_data();
 	UARBlueprintLibrary::SaveARPinToLocalStore(pin_save_name, anchor_pin);
+
+	sync_and_subscribe(true);
 }
 
-void A_integration_game_state::sync_and_subscribe()
+void A_integration_game_state::sync_and_subscribe(bool forced)
 {
-	if (!object_client || synced) return;
-	
+	if (!forced && synced) return;
+
 	synced = true;
-	object_client->sync_objects();
-	object_client->async_subscribe_objects();
-	object_client->async_subscribe_delete_objects();
+
+	if (object_client)
+	{
+		object_client->sync_objects();
+		object_client->async_subscribe_objects();
+		object_client->async_subscribe_delete_objects();
+	}
+
+#if PLATFORM_HOLOLENS
+	hand_tracking_client->update_local_transform(anchor_pin->GetLocalToWorldTransform().Inverse());
+#endif
+	hand_tracking_client->async_transmit_data();
+
+	franka_client->async_transmit_data();
+	franka_tcp_client->async_transmit_data();
+	//franka_joint_client->async_transmit_data();
+	franka_joint_sync_client->async_transmit_data();
 }
 
 void A_integration_game_state::update_meshes(const TSet<FString>& pending_proto)
@@ -327,12 +365,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			/**
 			 * calculate the actor transform
 			 */
-			trafo = data.transform;
-			trafo.ScaleTranslation(xr_factor);
-			trafo.SetScale3D(
-				trafo.GetScale3D() *
-				prototype->bounding_box.GetExtent() *
-				xr_factor);
+			trafo = data.transform.GetScaled(prototype->bounding_box.GetExtent());
 
 			/**
 			 * bind actor post constructor function
@@ -340,7 +373,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			f = [this, data = create_proc_mesh_data(*prototype, *mesh)]
 			(A_procedural_mesh_actor* actor)
 				{
-					actor->set_from_data(std::move(data));
+					actor->set_from_data(data);
 				};
 			return false;
 		},
@@ -352,8 +385,8 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			 */
 			trafo = FTransform(
 				box.rotation,
-				box.axis_box.GetCenter() * xr_factor,
-				box.axis_box.GetExtent() * xr_factor);
+				box.axis_box.GetCenter(),
+				box.axis_box.GetExtent());
 
 			/**
 			 * bind actor post constructor function
@@ -361,7 +394,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 			f = [this, actor_color = FLinearColor(color)]
 			(A_procedural_mesh_actor* actor)
 				{
-					actor->wireframe(std::move(actor_color));
+					actor->wireframe(actor_color);
 				};
 
 			return false;
@@ -380,7 +413,7 @@ void A_integration_game_state::handle_object_instance(const F_object_instance& i
 	const FString id = get_object_instance_id(instance);
 	A_procedural_mesh_actor* actor = find_or_spawn(id);
 	f(actor);
-	actor->AttachToComponent(pin_component,
+	actor->AttachToComponent(correction_component,
 		FAttachmentTransformRules::KeepRelativeTransform);
 
 	actor->SetActorRelativeTransform(trafo);
@@ -462,15 +495,23 @@ A_procedural_mesh_actor* A_integration_game_state::find_or_spawn(const FString& 
 
 void A_integration_game_state::handle_voxels(const F_voxel_data& data)
 {
-	franka_voxel->set_voxels(data);
+	//if (!franka_voxel->IsHidden())
+		franka_voxel->set_voxels(data);
 }
 
 void A_integration_game_state::handle_tcps(const TArray<FVector>& data)
 {
-	franka_tcps->set_tcps(data);
+	//if (!franka_tcps->IsHidden())
+		franka_tcps->set_tcps(data);
 }
 
 void A_integration_game_state::handle_joints(const FFrankaJoints& data)
 {
 	franka->SetJoints(data);
+}
+
+void A_integration_game_state::handle_sync_joints(const TArray<F_joints_synced>& data)
+{
+	//if (!franka->IsHidden())
+		franka_controller_->set_visual_plan(data);
 }

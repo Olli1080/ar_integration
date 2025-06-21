@@ -7,10 +7,7 @@
 A_hand_tracking_client::A_hand_tracking_client()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	local_transform = FTransform(
-		FQuat::Identity,
-		FVector::ZeroVector,
-		FVector::OneVector / 100.f);
+	local_transform = FTransform::Identity;
 }
 
 void A_hand_tracking_client::Tick(float DeltaSeconds)
@@ -28,12 +25,12 @@ void A_hand_tracking_client::Tick(float DeltaSeconds)
 	FXRMotionControllerData data;
 	UHeadMountedDisplayFunctionLibrary::GetMotionControllerData(GetWorld(), EControllerHand::Left, data);
 	pre_process(data);
-	hand_queue.Enqueue(convert<generated::hand_data>(std::make_pair(data, current_time)));
+	hand_queue.Enqueue(convert<generated::Hand_Data>(std::make_pair(data, current_time)));
 	cv.notify_one();
 	
 	UHeadMountedDisplayFunctionLibrary::GetMotionControllerData(GetWorld(), EControllerHand::Right, data);
 	pre_process(data);
-	hand_queue.Enqueue(convert<generated::hand_data>(std::make_pair(data, current_time)));
+	hand_queue.Enqueue(convert<generated::Hand_Data>(std::make_pair(data, current_time)));
 	cv.notify_one();
 }
 
@@ -65,24 +62,29 @@ void A_hand_tracking_client::async_transmit_data()
 
 			grpc::ClientContext ctx;
 			ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
-
-			google::protobuf::Empty nothing;
+			
+			google::protobuf::Empty empty;
 			const auto stream = 
-				stub->transmit_hand_data(&ctx, &nothing);
+				stub->transmit_hand_data(&ctx, &empty);
 			stream->WaitForInitialMetadata();
 
+			bool first = true;
 			while (status == hand_client_status::RUNNING)
 			{
-				generated::hand_data data;
-				if (!hand_queue.Dequeue(data))
+				generated::Hand_Data_Meta data;
+				if (!hand_queue.Dequeue(*data.mutable_hand_data()))
 				{
 					std::unique_lock lock(mtx);
 					cv.wait(lock);
 					continue;
 				}
+				
+				if (first)
+					*data.mutable_transformation_meta() = generate_meta();
 
 				if (!stream->Write(data))
 					break;
+				first = false;
 			}
 			stream->WritesDone();
 			if (stream->Finish().error_code() == grpc::StatusCode::UNKNOWN)
@@ -106,14 +108,8 @@ bool A_hand_tracking_client::async_stop()
 
 void A_hand_tracking_client::update_local_transform(const FTransform& local)
 {
-	constexpr float xr_scale = 100.f;
-	
-	FTransform temp = local;
-	temp.SetScale3D(temp.GetScale3D() / xr_scale);
-	temp.ScaleTranslation(1.f / xr_scale);
-
 	std::unique_lock lock(trafo_mtx);
-	local_transform = std::move(temp);
+	local_transform = local;
 }
 
 void A_hand_tracking_client::stop_Implementation()
@@ -143,14 +139,11 @@ void A_hand_tracking_client::pre_process(FXRMotionControllerData& data) const
 {
 	if (!data.bValid) return;
 
+	std::unique_lock lock(trafo_mtx);
+
 	data.GripPosition = local_transform.TransformPosition(data.GripPosition);
 	data.AimPosition = local_transform.TransformPosition(data.AimPosition);
 		
 	for (auto& hand_key_pos : data.HandKeyPositions)
 		hand_key_pos = local_transform.TransformPosition(hand_key_pos);
-
-	constexpr float xr_scale = 100.f;
-	
-	for (auto& radii : data.HandKeyRadii)
-		radii /= xr_scale;
 }

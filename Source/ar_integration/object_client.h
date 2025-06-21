@@ -11,52 +11,9 @@
 #include "object.grpc.pb.h"
 #include "grpc_include_end.h"
 
+#include "stream_thread.h"
+
 #include "object_client.generated.h"
-
-/**
- * @class stream_thread
- *
- * class ensuring that there is only one stream running in a thread at
- * a time
- *
- * thread joins itself after stream closed or is aborted
- */
-class stream_thread final
-{
-public:
-
-	/**
-	 * starts transmission thread
-	 * @param f transmission function to be executed in thread
-	 */
-	stream_thread(std::function<void(grpc::ClientContext&)>&& f);
-
-	/**
-	 * Aborts transmission thread if still running
-	 */
-	~stream_thread();
-
-	/**
-	 * returns true if transmission is already done
-	 */
-	bool done() const;
-
-private:
-
-	/**
-	 * ensures @ref{destroyed} is correct
-	 */
-	mutable std::mutex mtx;
-
-	/**
-	 * join_mtx ensures that the right
-	 * thread is joining @ref{thread}
-	 */
-	mutable std::mutex join_mtx;
-	bool destroyed = false;
-	grpc::ClientContext ctx;
-	std::unique_ptr<std::thread> thread;
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 	F_object_instance_data_delegate, const F_object_instance_data&, data);
@@ -66,6 +23,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 	F_object_delete_delegate, const FString&, id);
+
+class TF_Conv_Wrapper;
 
 UCLASS()
 class U_object_client : public UObject, public I_Base_Client_Interface
@@ -133,7 +92,7 @@ private:
 	 * processes incoming object_instances with wrappers
 	 * and emits corresponding signals
 	 */
-	void process(const generated::object_instance& instance) const;
+	void process(const generated::Object_Instance_TF_Meta& meta_instance, TF_Conv_Wrapper& wrapper) const;
 	
 	std::unique_ptr<generated::object_com::Stub> stub;
 	

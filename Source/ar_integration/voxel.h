@@ -30,11 +30,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void insert(const TArray<FVector>& points);
 
+	//UFUNCTION(BlueprintCallable)
+	//void insert_sync(const TArray<FVector>& points);
+
 	/**
 	 * Adds filtered point as voxel
 	 */
-	UFUNCTION(BlueprintCallable)
-	void insert_point(const FVector& point);
+	//UFUNCTION(BlueprintCallable)
+	//void insert_point(const FVector& point);
 
 	/**
 	 * sets voxel size
@@ -46,11 +49,16 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void set_voxel_size(float size);
-	
+
+	//UFUNCTION(BlueprintCallable)
+	//void clear_all();
+
 private:
 
 	bool init = true;
 	float voxel_size = 2.;
+
+	float dt = 0.f;
 
 	/**
 	 * @var mesh global mesh of voxels
@@ -69,6 +77,8 @@ private:
 	 */
 	UPROPERTY()
 	UInstancedStaticMeshComponent* instanced;
+
+	TArray<FTransform> all_transforms;
 
 	/**
 	 * @var set of voxels that have to be spawned

@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "Engine/StaticMeshActor.h"
 
+#include "franka_common.h"
+
 #include "franka_tcps.generated.h"
 
 /**
@@ -10,7 +12,7 @@
  * defined resolution
  */
 UCLASS(Blueprintable)
-class AR_INTEGRATION_API A_franka_tcps : public AActor
+class AR_INTEGRATION_API A_franka_tcps : public AActor, public I_franka_Interface
 {
 	GENERATED_BODY()
 public:
@@ -25,6 +27,10 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void set_tcps(const TArray<FVector>& data);
+	
+	void clear_Implementation() override;
+
+	void set_visibility_Implementation(Visual_Change vis_change) override;
 
 private:
 

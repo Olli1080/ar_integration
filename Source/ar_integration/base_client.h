@@ -32,6 +32,51 @@ public:
 	void state_change(connection_state old_state, connection_state new_state);
 };
 
+
+/*
+USTRUCT()
+class FBaseClient
+{
+	GENERATED_BODY()
+
+public:
+
+	void set_channel(U_grpc_channel* ch, CreatorFunction creator)
+	{
+		if (!ch || !ch->channel) return;
+
+		I_Base_Client_Interface::Execute_stop(this);
+
+		std::unique_lock lock(channel_mutex);
+
+		creator(ch->channel);
+
+		ch->on_state_change.AddDynamic(this, &std::remove_reference_t<decltype(*this)>::state_change);
+
+		this->channel = ch;
+	}
+
+	void stop();
+
+	void state_change(connection_state old_state, connection_state new_state);
+
+
+	UPROPERTY()
+	U_grpc_channel* channel = nullptr;
+	mutable std::mutex channel_mutex;
+};
+
+#define BASE_CLIENT_DECLARATION(CreatorFN)																		\
+	UPROPERTY()																							\
+	UBaseClient* baseClient;																			\
+																										\
+	public:																								\
+	void set_channel_Implementation(U_grpc_channel* ch) override{baseClient->set_channel(ch, CreatorFN);}	\
+//	void stop_Implementation() override{baseClient->stop();}											\
+//	void state_change_Implementation(connection_state old_state, connection_state new_state) override{baseClient->state_change(old_state, new_state);}	\
+*/
+
+
 /**
  * TODO::
  * remove old dynamic from on_state_change if

@@ -7,11 +7,15 @@ public class ar_integration : ModuleRules
 	public ar_integration(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		CppStandard = CppStandardVersion.Cpp17;
+		CppStandard = CppStandardVersion.Cpp20; //C++20 not allowed with uwp
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Research", "Grpc", "AugmentedReality", "ProceduralMeshComponent", "HeadMountedDisplay", "UXTools", "ProceduralMeshComponent" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Research", "Grpc", "AugmentedReality", "ProceduralMeshComponent", "HeadMountedDisplay", "UXTools", "ProceduralMeshComponent", "XRBase" });
+
+        //PublicDefinitions.Add("WITH_POINTCLOUD");
+
+
 
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

@@ -3,10 +3,10 @@
 #include "pcl_client.h"
 
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
+
 #include "Math/TransformVectorized.h"
 #include "ARBlueprintLibrary.h"
-//#include "ARPin.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 
 #include "util.h"
 
@@ -16,7 +16,7 @@ pcl_transmission_vertices::pcl_transmission_vertices(std::unique_ptr<generated::
 	context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 }
 
-void pcl_transmission_vertices::transmit_data(generated::maybe_matrix& response)
+void pcl_transmission_vertices::transmit_data(generated::ICP_Result& response)
 {
 	stream = stub->transmit_pcl_data(&context, &response);
 	stream->WaitForInitialMetadata();
@@ -24,7 +24,14 @@ void pcl_transmission_vertices::transmit_data(generated::maybe_matrix& response)
 
 bool pcl_transmission_vertices::send_data(const F_point_cloud& pcl)
 {
-	return stream->Write(convert<generated::pcl_data>(pcl));
+	generated::Pcl_Data_Meta to_send;
+	*to_send.mutable_pcl_data() = convert<generated::Pcl_Data>(pcl);
+
+	if (first)
+		*to_send.mutable_transformation_meta() = generate_meta();
+	first = false;
+
+	return stream->Write(to_send);
 }
 
 grpc::Status pcl_transmission_vertices::end_data()
@@ -34,14 +41,14 @@ grpc::Status pcl_transmission_vertices::end_data()
 }
 
 
-
+/*
 pcl_transmission_draco::pcl_transmission_draco(std::unique_ptr<generated::pcl_com::Stub>& stub)
 	: stub(stub)
 {
 	context.set_compression_algorithm(GRPC_COMPRESS_NONE);
 }
 
-void pcl_transmission_draco::transmit_data(generated::maybe_matrix& response)
+void pcl_transmission_draco::transmit_data(generated::ICP_Result& response)
 {
 	stream = stub->transmit_draco_data(&context, &response);
 	stream->WaitForInitialMetadata();
@@ -57,12 +64,16 @@ grpc::Status pcl_transmission_draco::end_data()
 	stream->WritesDone();
 	return stream->Finish();
 }
-
+*/
 
 
 A_pcl_client::A_pcl_client()
 {
+#ifdef WITH_POINTCLOUD
 	PrimaryActorTick.bCanEverTick = true;
+#else
+	PrimaryActorTick.bCanEverTick = false;
+#endif
 }
 
 // Called when the game starts or when spawned
@@ -113,10 +124,19 @@ void A_pcl_client::set_box_interface_obj(UObject* obj)
 		box_interface_obj = obj;		
 }
 
+void A_pcl_client::state_change_sync(state old_state, state new_state) const
+{
+	FFunctionGraphTask::CreateAndDispatchWhenReady([this, old_state, new_state]()
+		{
+			on_state_change.Broadcast(old_state, new_state);
+		},
+		TStatId{}, nullptr, ENamedThreads::GameThread);
+}
+
 void A_pcl_client::set_state(state new_state)
 {
 	if (const auto old_state = current_state.exchange(new_state); old_state != new_state)
-		on_state_change.Broadcast(old_state, new_state);
+		state_change_sync(old_state, new_state);
 }
 
 grpc::Status A_pcl_client::send_point_clouds()
@@ -125,10 +145,16 @@ grpc::Status A_pcl_client::send_point_clouds()
 	 * generate context data for transmission
 	 * and set compression algorithm
 	 */
-	generated::maybe_matrix response;
+	generated::ICP_Result response;
+
+	const bool interface_present = box_interface_obj &&
+		I_box_interface::Execute_has_box(box_interface_obj);
+
+	F_obb obb;
+	if (interface_present)
+		obb = I_box_interface::Execute_get_box(box_interface_obj);
 
 	const auto extrinsic_inv = cam->get_camera_view_matrix().Inverse();
-	constexpr float xr_scale = 100.f;
 
 	/**
 	 * initialize stream
@@ -149,61 +175,68 @@ grpc::Status A_pcl_client::send_point_clouds()
 
 		auto& [location, point_cloud] = pcl.GetValue();
 
-		FTransform trafo;
+		FTransform world_trafo;
 		/**
-		 * transform to convert point from HoloLens to global space (meters)
+		 * transform to convert point from HoloLens camera to global space
+		 * extrinsic_inv is position of sensor relative to rig
+		 * location is position of rig relative to world
 		 */
-		FTransform::Multiply(&trafo, &extrinsic_inv, &location);
+		FTransform::Multiply(&world_trafo, &extrinsic_inv, &location);
 
-		bool interface_present = box_interface_obj &&
-			I_box_interface::Execute_has_box(box_interface_obj);
-		
-		if (interface_present || voxel)
+		for (auto& p : point_cloud.data)
 		{
-			/**
-			 * transformation to convert point from HoloLens into
-			 * unreal space (unreal units)
-			 */
-			FTransform world_trafo = FTransform(trafo.GetRotation(),
-				trafo.GetTranslation() * xr_scale,
-				trafo.GetScale3D() * xr_scale);
-
-			for (auto& p : point_cloud.data)
+			p = world_trafo.TransformPosition(p);
+			
+			if (interface_present)
 			{
-				const auto world_point = 
-					world_trafo.TransformPosition(p);
-
-				if (interface_present)
-				{
-					/**
-					 * Filter points from point cloud
-					 * by setting them to NAN
-					 */
-					if (!I_box_interface::Execute_is_point_in_region(
-						box_interface_obj, world_point))
-						p.Set(NAN, NAN, NAN);
-					else
-					{
-						p = trafo.TransformPosition(p);
-						if (voxel)
-							voxel->insert_point(world_point);
-					}
-				}
-				else if (voxel)
-					voxel->insert_point(world_point);
+				if (!UKismetMathLibrary::IsPointInBoxWithTransform(p, FTransform(obb.rotation, obb.axis_box.GetCenter()), obb.axis_box.GetExtent()))
+					p.Set(NAN, NAN, NAN);
 			}
 		}
-		if (!interface_present)
+		if (interface_present)
 		{
-			for (auto& p : point_cloud.data)
-				p = trafo.TransformPosition(p);
+			size_t last_valid_idx = 0;
+			size_t valid_points = 0;
+			//size_t last_invalid_idx = point_cloud.data.Num() - 1;
+			for (size_t i = point_cloud.data.Num() - 1; (i + 1) > 0; --i)
+			{
+				if (point_cloud.data[i].ContainsNaN())
+					continue;
+
+				last_valid_idx = i;
+				valid_points = i + 1;
+				break;
+			}
+
+			//we can skip every nan before the last valid index
+			for (size_t i = last_valid_idx; (i + 1) > 0; --i)
+			{
+				if (!point_cloud.data[i].ContainsNaN())
+					continue;
+
+				--valid_points;
+				point_cloud.data.Swap(last_valid_idx, i);
+
+				for (size_t j = i - 1; i > 0 && (j + 1) > 0; --j)
+				{
+					if (point_cloud.data[j].ContainsNaN())
+						continue;
+
+					last_valid_idx = i;
+					break;
+				}
+			}
+			point_cloud.data.SetNum(valid_points);
 		}
 
 		/**
 		 * return if there are no points left after filtering
 		 */
-		if (!point_cloud.data.Num())
+		if (point_cloud.data.IsEmpty())
 			continue;
+
+		if (voxel)
+			voxel->insert(point_cloud.data);
 
 		/**
 		 * transmit point clouds while stream is active
@@ -221,13 +254,33 @@ grpc::Status A_pcl_client::send_point_clouds()
 	 * evaluate if point cloud correspondence with server is valid
 	 * and transform it and set table_to_point_cloud
 	 */
-	if (status.ok() && response.has_data())
+	if (status.ok())
 	{
-		auto result = convert<FTransform>(response.data());
-		result.ScaleTranslation(xr_scale);
-		table_to_point_cloud = result;
+		if (const auto result = convert<TOptional<FTransform>>(response); result.IsSet())
+			table_to_point_cloud = result.GetValue();
 	}
 	return status;
+}
+
+bool A_pcl_client::filter_point(FVector& p) const
+{
+	const bool interface_present = box_interface_obj &&
+		I_box_interface::Execute_has_box(box_interface_obj);
+
+	if (!interface_present)
+		return false;
+	
+	/**
+	 * Filter points from point cloud
+	 * by setting them to NAN
+	 */
+	if (!I_box_interface::Execute_is_point_in_region(
+		box_interface_obj, p))
+	{
+		p.Set(NAN, NAN, NAN);
+		return true;
+	}
+	return false;
 }
 
 grpc::Status A_pcl_client::send_obb() const
@@ -235,16 +288,16 @@ grpc::Status A_pcl_client::send_obb() const
 	if (box_interface_obj &&
 		I_box_interface::Execute_has_box(box_interface_obj))
 	{
-		constexpr float xr_scale = 100.f;
-
-		F_obb temp = I_box_interface::Execute_get_box(box_interface_obj);
-		const FBox& ab = temp.axis_box;
-		temp.axis_box = FBox::BuildAABB(ab.GetCenter() / xr_scale, ab.GetExtent() / xr_scale);
+		const F_obb obb = I_box_interface::Execute_get_box(box_interface_obj);
 
 		grpc::ClientContext ctx;
-		google::protobuf::Empty nothing;
-		
-		stub->transmit_obb(&ctx, convert<generated::obb>(temp), &nothing);
+
+		generated::Obb_Meta to_send;
+		*to_send.mutable_obb() = convert<generated::Obb>(obb);
+		*to_send.mutable_transformation_meta() = generate_meta();
+
+		google::protobuf::Empty empty;
+		stub->transmit_obb(&ctx, to_send, &empty);
 	}
 	return grpc::Status::OK;
 }
@@ -312,7 +365,7 @@ void A_pcl_client::toggle(bool active)
 		expected, state::RUNNING);
 
 	if (expected != state::RUNNING)
-		on_state_change.Broadcast(expected, state::RUNNING);
+		state_change_sync(expected, state::RUNNING);
 	
 	if (!was_expected) return;
 
@@ -321,12 +374,16 @@ void A_pcl_client::toggle(bool active)
 	 */
 	if (visualize)
 	{
-		FActorSpawnParameters params;
-		params.bNoFail = true;
-		
-		voxel = GetWorld()->SpawnActor<A_voxel>(params);
-		voxel->set_voxel_size(box_interface_obj &&
-			I_box_interface::Execute_has_box(box_interface_obj) ? 3.f : 10.f);
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
+			{
+				FActorSpawnParameters params;
+				params.bNoFail = true;
+
+				voxel = GetWorld()->SpawnActor<A_voxel>(params);
+				voxel->set_voxel_size(box_interface_obj &&
+					I_box_interface::Execute_has_box(box_interface_obj) ? 3.f : 10.f);
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread)->Wait();
 	}
 	/**
 	 * set state to running and clear depth image buffer
@@ -339,7 +396,7 @@ void A_pcl_client::toggle(bool active)
 	 */
 	{
 		std::unique_lock lock(channel_mutex);
-		send_obb();
+		std::ignore = send_obb();
 		std::list<std::thread> threads;
 		for (size_t i = 0; i < 3; ++i)
 			threads.emplace_back(std::thread(&A_pcl_client::send_point_clouds, this));
@@ -351,7 +408,13 @@ void A_pcl_client::toggle(bool active)
 	 * wake any waiting state changes
 	 */
 	if (voxel)
-		voxel->Destroy();
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
+			{
+				voxel->Destroy();
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread)->Wait();
+	}
 	
 	set_state(state::READY);
 	cv.notify_all();
@@ -372,12 +435,13 @@ void A_pcl_client::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+#ifdef WITH_POINTCLOUD
 	//FActorSpawnParameters params;
 	//params.bNoFail = true;
 
 	if (current_state != state::INIT) return;
 	
-	if (UARBlueprintLibrary::GetARSessionStatus().Status == 
+	if (UARBlueprintLibrary::GetARSessionStatus().Status ==
 		EARSessionStatus::Running && channel)
 	{
 		set_state(state::READY);
@@ -390,4 +454,5 @@ void A_pcl_client::Tick(float DeltaTime)
 		
 		cv.notify_all();
 	}
+#endif
 }

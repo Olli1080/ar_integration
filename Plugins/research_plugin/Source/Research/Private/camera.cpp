@@ -22,8 +22,12 @@ struct SAnchorMSFT
 
 #if (PLATFORM_HOLOLENS)
 extern "C"
-HMODULE LoadLibraryA(
-    LPCSTR lpLibFileName
+WINBASEAPI
+_Ret_maybenull_
+HMODULE
+WINAPI
+LoadLibraryA(
+    _In_ LPCSTR lpLibFileName
 );
 #endif
 
@@ -50,7 +54,7 @@ void A_camera::Tick(float DeltaSeconds)
 void A_camera::BeginDestroy()
 {
 #if (PLATFORMS)
-#if (!defined(PLATFORM_HOLOLENS) && !defined(__PARSER__))
+#if (!PLATFORM_HOLOLENS && !defined(__PARSER__))
     Super::BeginDestroy();
     return;
 #endif	
@@ -130,7 +134,7 @@ bool A_camera::is_supported()
 void A_camera::init(threading threading_type)
 {
 #if (PLATFORMS)
-#if (!defined(PLATFORM_HOLOLENS) && !defined(__PARSER__))
+#if (!PLATFORM_HOLOLENS && !defined(__PARSER__))
     //allows auto completion
     return;
 #endif
@@ -179,6 +183,7 @@ void A_camera::init(threading threading_type)
         winrt::check_hresult(lt_camera_sensor->GetCameraExtrinsicsMatrix(&m));
         camera_view_matrix = convert<FTransform>(m);
     }
+    obtain_coord_system();
     /**
      * start worker
      */
@@ -205,9 +210,6 @@ void A_camera::init(threading threading_type)
 
 void A_camera::obtain_coord_system()
 {
-    if (session_status != EARSessionStatus::Running)
-        return;
-
     /**
      * spawn arpin to dummy component and extract
      * underlying spatial anchor and its coordinate system
@@ -287,8 +289,8 @@ void A_camera::worker()
          */
         if (!coord_system)
         {
-            obtain_coord_system();
-            continue;
+            state = camera_state::TERMINATED;
+            return;
         }
 
         /**
@@ -379,7 +381,7 @@ TArray<FVector> A_camera::process(
         uv[1] = i;// + 0.5f;
         for (UINT j = 0; j < resolution.Width; ++j, ++index)
         {
-            uv[0] = j; // +0.5f;
+            uv[0] = j;// + 0.5f;
             //float uv[2] = { static_cast<float>(i), static_cast<float>(j) };
 
             if (sigma[index] & 0x80)
@@ -391,7 +393,8 @@ TArray<FVector> A_camera::process(
         	
             auto vertex = FVector(xy[0], xy[1], 1.f);
             vertex.Normalize();
-            vertex *= (static_cast<float>(depth[index]) / 1000.f);
+            //depth[index] is in mm
+            vertex *= (static_cast<float>(depth[index]) / 10.f);
         	
             out.Add(FVector(-vertex.Z, vertex.X, vertex.Y));
         }

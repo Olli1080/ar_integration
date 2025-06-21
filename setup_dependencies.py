@@ -15,7 +15,7 @@ if (not exists(Path.joinpath(filePath, "ar_integration.uproject"))):
 
 pluginPath = Path.joinpath(filePath, "Plugins", "vc-ue-extensions")
 
-resp = urlopen("https://github.com/microsoft/vc-ue-extensions/releases/download/v2.4/VisualStudioTools_v2.4_ue52.zip")
+resp = urlopen("https://github.com/microsoft/vc-ue-extensions/releases/download/v2.5/VisualStudioTools_v2.5_ue54.zip")
 myzip = ZipFile(BytesIO(resp.read()))
 myzip.extractall(pluginPath)
 

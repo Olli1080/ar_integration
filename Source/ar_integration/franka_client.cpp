@@ -3,84 +3,53 @@
 #include "util.h"
 #include "Franka.h"
 
-void U_franka_client::BeginDestroy()
+U_franka_client::~U_franka_client()
 {
-	status = franka_client_status::TERMINATED;
-	if (ctx)
-		ctx->TryCancel();
-	if (thread)
-		thread->join();
-	Super::BeginDestroy();
+	U_franka_client::stop_Implementation();
 }
 
 void U_franka_client::async_transmit_data()
 {
-	franka_client_status temp_status = franka_client_status::READY;
+	if (!channel ||
+		thread && !thread->done()) return;
 
-	if (disconnected) return;
-	if (!status.compare_exchange_strong(temp_status, franka_client_status::RUNNING))
-		return;
-
-	if (thread)
-		thread->join();
-
-	thread = std::make_unique<std::thread>([this]()
+	thread = std::make_unique<stream_thread>(
+		[this](grpc::ClientContext& ctx)
 		{
-			if (!channel) return;
-
-			ctx = std::make_unique<grpc::ClientContext>();
-			ctx->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-
-			const google::protobuf::Empty nothing;
-			const auto stream =
-				stub->transmit_voxels(ctx.get(), nothing);
-			stream->WaitForInitialMetadata();
-
-			while (status == franka_client_status::RUNNING)
-			{
-				generated::voxels data;
-				if (!stream->Read(&data))
-					break;
-
-				FFunctionGraphTask::CreateAndDispatchWhenReady([this, voxel_data = convert<F_voxel_data>(data)]()
-				{
-						on_voxel_data.Broadcast(voxel_data);
-				},
-				TStatId{}, nullptr, ENamedThreads::GameThread);
-
-				//on_voxel_data.Broadcast(convert<F_voxel_data>(data));
-			}
-			//stream->WritesDone();
-			if (stream->Finish().error_code() == grpc::StatusCode::UNKNOWN)
+			if (this->transmit_data(ctx).error_code() == grpc::StatusCode::UNKNOWN)
 				disconnected = true;
-
-			franka_client_status expected = franka_client_status::STOP;
-			status.compare_exchange_strong(expected, franka_client_status::READY);
 		});
 }
 
-bool U_franka_client::async_stop()
+grpc::Status U_franka_client::transmit_data(grpc::ClientContext& ctx)
 {
-	franka_client_status temp_status = franka_client_status::RUNNING;
-	const bool ret_val = status.compare_exchange_strong(
-		temp_status, franka_client_status::STOP);
+	ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
-	if (ctx)
-		ctx->TryCancel();
+	google::protobuf::Empty empty;
+	const auto stream =
+		stub->transmit_voxels(&ctx, empty);
+	stream->WaitForInitialMetadata();
 
-	return ret_val;
+	TF_Conv_Wrapper tf_wrapper;
+	generated::Voxel_Transmission data;
+
+	while (stream->Read(&data))
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, voxel_data = convert_meta<Voxel_Data>(data, tf_wrapper)]()
+			{
+				if (voxel_data.IsType<F_voxel_data>())
+					on_voxel_data.Broadcast(voxel_data.Get<F_voxel_data>());
+				else
+					on_visual_change.Broadcast(voxel_data.Get<Visual_Change>());
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread);
+	}
+	return stream->Finish();
 }
 
 void U_franka_client::stop_Implementation()
 {
-	const bool stop = async_stop();
-	if (stop)
-	{
-		thread->join();
-		thread = nullptr;
-	}
-	//hand_queue.Empty();
-	status = franka_client_status::READY;
+	thread.reset();
 }
 
 void U_franka_client::state_change_Implementation(connection_state old_state, connection_state new_state)
@@ -97,82 +66,53 @@ void U_franka_client::state_change_Implementation(connection_state old_state, co
 
 
 
-void U_franka_tcp_client::BeginDestroy()
+U_franka_tcp_client::~U_franka_tcp_client()
 {
-	status = franka_client_status::TERMINATED;
-	if (ctx)
-		ctx->TryCancel();
-	if (thread)
-		thread->join();
-	Super::BeginDestroy();
+	U_franka_tcp_client::stop_Implementation();
 }
 
 void U_franka_tcp_client::async_transmit_data()
 {
-	franka_client_status temp_status = franka_client_status::READY;
+	if (!channel ||
+		thread && !thread->done()) return;
 
-	if (disconnected) return;
-	if (!status.compare_exchange_strong(temp_status, franka_client_status::RUNNING))
-		return;
-
-	if (thread)
-		thread->join();
-
-	thread = std::make_unique<std::thread>([this]()
+	thread = std::make_unique<stream_thread>(
+		[this](grpc::ClientContext& ctx)
 		{
-			if (!channel) return;
-
-			ctx = std::make_unique<grpc::ClientContext>();
-			ctx->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-
-			const google::protobuf::Empty nothing;
-			const auto stream =
-				stub->transmit_tcps(ctx.get(), nothing);
-			stream->WaitForInitialMetadata();
-
-			while (status == franka_client_status::RUNNING)
-			{
-				generated::tcps data;
-				if (!stream->Read(&data))
-					break;
-
-				FFunctionGraphTask::CreateAndDispatchWhenReady([this, tcp_data = convert<TArray<FVector>>(data)]()
-					{
-						on_tcp_data.Broadcast(tcp_data);
-					},
-					TStatId{}, nullptr, ENamedThreads::GameThread);
-			}
-			//stream->WritesDone();
-			if (stream->Finish().error_code() == grpc::StatusCode::UNKNOWN)
+			if (this->transmit_data(ctx).error_code() == grpc::StatusCode::UNKNOWN)
 				disconnected = true;
-
-			franka_client_status expected = franka_client_status::STOP;
-			status.compare_exchange_strong(expected, franka_client_status::READY);
 		});
 }
 
-bool U_franka_tcp_client::async_stop()
+grpc::Status U_franka_tcp_client::transmit_data(grpc::ClientContext& ctx)
 {
-	franka_client_status temp_status = franka_client_status::RUNNING;
-	const bool ret_val = status.compare_exchange_strong(
-		temp_status, franka_client_status::STOP);
+	ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
-	if (ctx)
-		ctx->TryCancel();
+	google::protobuf::Empty empty;
+	const auto stream =
+		stub->transmit_tcps(&ctx, empty);
+	stream->WaitForInitialMetadata();
 
-	return ret_val;
+	TF_Conv_Wrapper tf_wrapper;
+	generated::Tcps_Transmission data;
+
+	while (stream->Read(&data))
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, tcp_data = convert_meta<Tcps_Data>(data, tf_wrapper)/*convert_meta<TArray<FVector>>(data, tf_wrapper)*/]()
+			{
+				if (tcp_data.IsType<TArray<FVector>>())
+					on_tcp_data.Broadcast(tcp_data.Get<TArray<FVector>>());
+				else
+					on_visual_change.Broadcast(tcp_data.Get<Visual_Change>());
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread);
+	}
+	return stream->Finish();
 }
 
 void U_franka_tcp_client::stop_Implementation()
 {
-	const bool stop = async_stop();
-	if (stop)
-	{
-		thread->join();
-		thread = nullptr;
-	}
-	//hand_queue.Empty();
-	status = franka_client_status::READY;
+	thread.reset();
 }
 
 void U_franka_tcp_client::state_change_Implementation(connection_state old_state, connection_state new_state)
@@ -189,94 +129,105 @@ void U_franka_tcp_client::state_change_Implementation(connection_state old_state
 
 
 
-void U_franka_joint_client::BeginDestroy()
-{
-	status = franka_client_status::TERMINATED;
-	if (ctx)
-		ctx->TryCancel();
-	if (thread)
-		thread->join();
-	Super::BeginDestroy();
-}
-
 void U_franka_joint_client::async_transmit_data()
 {
-	franka_client_status temp_status = franka_client_status::READY;
+	if (!channel ||
+		thread && !thread->done()) return;
 
-	if (disconnected) return;
-	if (!status.compare_exchange_strong(temp_status, franka_client_status::RUNNING))
-		return;
-
-	if (thread)
-		thread->join();
-
-	thread = std::make_unique<std::thread>([this]()
+	thread = std::make_unique<stream_thread>(
+		[this](grpc::ClientContext& ctx)
 		{
-			if (!channel) return;
-
-			ctx = std::make_unique<grpc::ClientContext>();
-			ctx->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-
-			const google::protobuf::Empty nothing;
-			const auto stream =
-				stub->transmit_joints(ctx.get(), nothing);
-			stream->WaitForInitialMetadata();
-
-			while (status == franka_client_status::RUNNING)
-			{
-				generated::joints data;
-				if (!stream->Read(&data))
-					break;
-
-				FFrankaJoints joints;
-				joints.theta_0 = data.theta_1();
-				joints.theta_1 = data.theta_2();
-				joints.theta_2 = data.theta_3();
-				joints.theta_3 = data.theta_4();
-				joints.theta_4 = data.theta_5();
-				joints.theta_5 = data.theta_6();
-				joints.theta_6 = data.theta_7();
-
-				FFunctionGraphTask::CreateAndDispatchWhenReady([this, joint_data = std::move(joints)]()
-					{
-						on_joint_data.Broadcast(joint_data);
-					},
-					TStatId{}, nullptr, ENamedThreads::GameThread);
-			}
-			//stream->WritesDone();
-			if (stream->Finish().error_code() == grpc::StatusCode::UNKNOWN)
+			if (this->transmit_data(ctx).error_code() == grpc::StatusCode::UNKNOWN)
 				disconnected = true;
-
-			franka_client_status expected = franka_client_status::STOP;
-			status.compare_exchange_strong(expected, franka_client_status::READY);
 		});
 }
 
-bool U_franka_joint_client::async_stop()
+grpc::Status U_franka_joint_client::transmit_data(grpc::ClientContext& ctx)
 {
-	franka_client_status temp_status = franka_client_status::RUNNING;
-	const bool ret_val = status.compare_exchange_strong(
-		temp_status, franka_client_status::STOP);
+	ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
-	if (ctx)
-		ctx->TryCancel();
+	google::protobuf::Empty empty;
+	const auto stream =
+		stub->transmit_joints(&ctx, empty);
+	stream->WaitForInitialMetadata();
 
-	return ret_val;
+	generated::Joints data;
+	while (stream->Read(&data))
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, joint_data = convert<FFrankaJoints>(data)]()
+			{
+				on_joint_data.Broadcast(joint_data);
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread);
+	}
+	return stream->Finish();
 }
 
 void U_franka_joint_client::stop_Implementation()
 {
-	const bool stop = async_stop();
-	if (stop)
-	{
-		thread->join();
-		thread = nullptr;
-	}
-	//hand_queue.Empty();
-	status = franka_client_status::READY;
+	thread.reset();
 }
 
 void U_franka_joint_client::state_change_Implementation(connection_state old_state, connection_state new_state)
+{
+	if (new_state != connection_state::READY) return;
+
+	if (disconnected)
+	{
+		disconnected = false;
+		async_transmit_data();
+	}
+}
+
+
+U_franka_joint_sync_client::~U_franka_joint_sync_client()
+{
+	U_franka_joint_sync_client::stop_Implementation();
+}
+
+void U_franka_joint_sync_client::async_transmit_data()
+{
+	if (!channel ||
+		thread && !thread->done()) return;
+
+	thread = std::make_unique<stream_thread>(
+		[this](grpc::ClientContext& ctx)
+		{
+			if (this->transmit_data(ctx).error_code() == grpc::StatusCode::UNKNOWN)
+				disconnected = true;
+		});
+}
+
+grpc::Status U_franka_joint_sync_client::transmit_data(grpc::ClientContext& ctx)
+{
+	ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+
+	google::protobuf::Empty empty;
+	const auto stream =
+		stub->transmit_sync_joints(&ctx, empty);
+	stream->WaitForInitialMetadata();
+
+	generated::Sync_Joints_Transmission data;
+	while (stream->Read(&data))
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, sync_joint_data = convert<Sync_Joints_Data>(data)]()
+			{
+				if (sync_joint_data.IsType<TArray<F_joints_synced>>())
+					on_sync_joint_data.Broadcast(sync_joint_data.Get<TArray<F_joints_synced>>());
+				else
+					on_visual_change.Broadcast(sync_joint_data.Get<Visual_Change>());
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread);
+	}
+	return stream->Finish();
+}
+
+void U_franka_joint_sync_client::stop_Implementation()
+{
+	thread.reset();
+}
+
+void U_franka_joint_sync_client::state_change_Implementation(connection_state old_state, connection_state new_state)
 {
 	if (new_state != connection_state::READY) return;
 

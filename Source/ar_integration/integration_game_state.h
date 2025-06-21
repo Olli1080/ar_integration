@@ -13,6 +13,7 @@
 #include "franka_voxel.h"
 #include "franka_tcps.h"
 #include "Franka.h"
+#include "franka_shadow.h"
 #include "hand_tracking_client.h"
 #include "grpc_wrapper.h"
 
@@ -66,7 +67,7 @@ public:
 	 * @attend emits @ref{on_channel_change} after all internal client channels are set
 	 */
 	UFUNCTION(BlueprintCallable)
-	void change_channel(FString target);
+	void change_channel(FString target, int32 retries = 1);
 
 	/**
 	 * signal emitted on valid change of channel
@@ -129,8 +130,11 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	U_franka_tcp_client* franka_tcp_client;
 
+	//UPROPERTY(BlueprintReadOnly)
+	//U_franka_joint_client* franka_joint_client;
+
 	UPROPERTY(BlueprintReadOnly)
-	U_franka_joint_client* franka_joint_client;
+	U_franka_joint_sync_client* franka_joint_sync_client;
 
 	UPROPERTY(BlueprintReadOnly)
 	A_franka_voxel* franka_voxel;
@@ -140,6 +144,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	AFranka* franka;
+
+	UPROPERTY(BlueprintReadOnly)
+	U_franka_shadow_controller* franka_controller_;
 
 	/**
 	 * thread safe update of anchor
@@ -156,10 +163,18 @@ public:
 	 * if not already synced and if object_client is valid
 	 */
 	UFUNCTION(BlueprintCallable)
-	void sync_and_subscribe();
+	void sync_and_subscribe(bool forced = false);
 
 	UPROPERTY(BlueprintAssignable)
 	F_post_actors_delegate on_post_actors;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool enable_registration =
+#ifdef WITH_POINTCLOUD
+		true;
+#else
+		false;
+#endif
 
 private:
 
@@ -206,6 +221,9 @@ private:
 	UPROPERTY()
 	USceneComponent* pin_component;
 
+	UPROPERTY()
+	USceneComponent* correction_component;
+
 	/**
 	 * Map of cached meshes by their name
 	 */
@@ -247,7 +265,7 @@ private:
 	template<typename T>
 	struct deduce_type
 	{
-		using type = typename std::remove_const<typename std::remove_reference<T>::type>::type;
+		using type = std::remove_const_t<std::remove_reference_t<T>>;
 	};
 
 	/**
@@ -272,6 +290,9 @@ private:
 
 	UFUNCTION()
 	void handle_joints(const FFrankaJoints& data);
+
+	UFUNCTION()
+	void handle_sync_joints(const TArray<F_joints_synced>& data);
 
 
 	/**
