@@ -1,15 +1,26 @@
 # Preparation
 1. Register as developer for the unreal engine to get access to the source code
-2. Install Visual Studio 2022: select the "Desktop development with C++" workload and additionally install:
-    * C++ Universal Windows Platform support for v 143 build tools (ARM64/ARM64EC)
-    * MSVC v143 - VS 2022 C++ ARM64/ARM64EC build tools (v14.38-17.8)
-    * MSVC v143 - VS 2022 + x64/x86 build tools (v14.38-17.8)
-    * C++ v14.38 (17.8) MFC for v143 build tools (ARM)
-    * C++ v14.38 (17.8) MFC for v143 build tools (ARM64)
-    * C++ v14.38 (17.8) MFC for v143 build tools (x86 & x64)
-    * C++ v14.38 (17.8) ATL forv143 build tools (ARM)
-    * C++ v14.38 (17.8) ATL forv143 build tools (ARM64)
-    * C++ v14.38 (17.8) ATL for v143 build tools (x86 & x64)
+2. Install Visual Studio 2022: select the `Desktop development with C++` workload and additionally install either:
+    1. Older version
+        * C++ Universal Windows Platform support for v143 build tools (ARM64/ARM64EC)
+        * MSVC v143 - VS 2022 C++ ARM64/ARM64EC build tools (v14.38-17.8)
+        * MSVC v143 - VS 2022 C++ x64/x86 build tools (v14.38-17.8)
+        * C++ v14.38 (17.8) MFC for v143 build tools (ARM)
+        * C++ v14.38 (17.8) MFC for v143 build tools (ARM64)
+        * C++ v14.38 (17.8) MFC for v143 build tools (x86 & x64)
+        * C++ v14.38 (17.8) ATL for v143 build tools (ARM)
+        * C++ v14.38 (17.8) ATL for v143 build tools (ARM64)
+        * C++ v14.38 (17.8) ATL for v143 build tools (x86 & x64)
+   2. Newer version
+        * C++ Universal Windows Platform support for v143 build tools (ARM64/ARM64EC)
+        * MSVC v143 - VS 2022 C++ ARM64/ARM64EC build tools (v14.44-17.14)
+        * MSVC v143 - VS 2022 C++ x64/x86 build tools (v14.44-17.14)
+        * C++ v14.44 (17.14) MFC for v143 build tools (ARM)
+        * C++ v14.44 (17.14) MFC for v143 build tools (ARM64)
+        * C++ v14.44 (17.14) MFC for v143 build tools (x86 & x64)
+        * C++ v14.44 (17.14) ATL for v143 build tools (ARM)
+        * C++ v14.44 (17.14) ATL for v143 build tools (ARM64)
+        * C++ v14.44 (17.14) ATL for v143 build tools (x86 & x64)
 3. Clone Repository: `git clone https://github.com/Olli1080/UnrealEngine.git -b 5.4.3` (you may wanna use `--single-branch` to avoid overhead)
 4. Follow the Instructions in the readme or use the Unreal Engine builder `https://github.com/Olli1080/Unreal-Binary-Builder.git`
 
