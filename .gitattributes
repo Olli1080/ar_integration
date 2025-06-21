@@ -1,0 +1,2 @@
+DerivedDataCache/*.ddp filter=lfs diff=lfs merge=lfs -text
+DerivedDataCache/*.csv filter=lfs diff=lfs merge=lfs -text
