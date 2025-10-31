@@ -332,7 +332,7 @@ public class Grpc : ModuleRules
 
     private void makeReleaseOnly(VcpkgPaths paths)
     {
-        if (File.ReadLines(paths.tripletFile).Contains("VCPKG_BUILD_TYPE release"))
+        if (File.ReadLines(paths.tripletFile).Contains("VCPKG_BUILD_TYPE release") && File.ReadLines(paths.tripletFile).Contains("VCPKG_PLATFORM_TOOLSET_VERSION \"14.38\""))
             return;
 
         var tempFile = Path.GetTempFileName();
@@ -340,7 +340,8 @@ public class Grpc : ModuleRules
 
         File.WriteAllLines(tempFile, linesToKeep);
         File.AppendAllLines(tempFile, new string[] { 
-            "set(VCPKG_BUILD_TYPE release)"
+            "set(VCPKG_BUILD_TYPE release)",
+            "set(VCPKG_PLATFORM_TOOLSET_VERSION \"14.38\")"
         });
         
         File.Move(tempFile, paths.tripletFile, true);
