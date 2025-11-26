@@ -37,7 +37,7 @@ void A_integration_game_state::BeginPlay()
 
 	//correction_component->RegisterComponent();
 	correction_component->AttachToComponent(pin_component, FAttachmentTransformRules::KeepRelativeTransform);
-	correction_component->SetRelativeTransform(FTransform(FQuat{FRotator{0., 2., 0.}}, FVector(-0.4, 1.3, 0.), FVector::One()));
+	correction_component->SetRelativeTransform(FTransform(FQuat{FRotator{0., 2., 0.}}, FVector(-0.9, 2.8, 0.), FVector::One()));
 	/*pin_component->AttachToComponent(GetRootComponent(),
 		FAttachmentTransformRules::KeepWorldTransform);*/
 
