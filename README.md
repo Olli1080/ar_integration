@@ -21,7 +21,7 @@
         * C++ v14.44 (17.14) ATL for v143 build tools (ARM)
         * C++ v14.44 (17.14) ATL for v143 build tools (ARM64)
         * C++ v14.44 (17.14) ATL for v143 build tools (x86 & x64)
-3. Clone Repository: `git clone https://github.com/Olli1080/UnrealEngine.git -b 5.4.3` (you may wanna use `--single-branch` to avoid overhead)
+3. Clone Repository: `git clone https://github.com/Olli1080/UnrealEngine.git -b revert_to_14-38` (you may wanna use `--single-branch` to avoid overhead)
 4. Follow the Instructions in the readme or use the Unreal Engine builder `https://github.com/Olli1080/Unreal-Binary-Builder.git`
 
 # Getting Started
