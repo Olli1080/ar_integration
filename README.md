@@ -25,7 +25,7 @@
 4. Follow the Instructions in the readme or use the Unreal Engine builder `https://github.com/Olli1080/Unreal-Binary-Builder.git`
 
 # Getting Started
-1. Clone Repository: `git clone https://github.com/Olli1080/ar_integration.git -b 5.4.3` .
+1. Clone Repository: `git clone https://github.com/Olli1080/ar_integration.git -b revert_to_14-38` .
 2. Clone Sub-Repositories `git submodule update --init --recursive`.
 3. Run in the checked-out repository: `python setup_dependencies.py`.
 4. Install Epic Games Launcher: https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi
