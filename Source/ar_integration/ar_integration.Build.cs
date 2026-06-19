@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
+using System.IO;
 
 public class ar_integration : ModuleRules
 {
@@ -8,10 +9,29 @@ public class ar_integration : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		CppStandard = CppStandardVersion.Cpp20; //C++20 not allowed with uwp
+		bEnableExceptions = true;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Research", "Grpc", "AugmentedReality", "ProceduralMeshComponent", "HeadMountedDisplay", "UXTools", "ProceduralMeshComponent", "XRBase" });
+		if (Target.Platform == UnrealTargetPlatform.Android)
+		{
+			PublicDependencyModuleNames.AddRange(new string[] { "Launch" });
+		}
+
+		PrivateDependencyModuleNames.AddRange(new string[] { "Grpc", "Research", "AugmentedReality", "ProceduralMeshComponent", "HeadMountedDisplay", "XRBase", "UXTools", "XRSimulation", "OculusInteraction", "OculusInteractionPrebuilts", "RHI", "RenderCore" });
+
+		if (Target.Platform == UnrealTargetPlatform.Android)
+		{
+			PrivateDependencyModuleNames.Add("OpenXR");
+			PrivateDependencyModuleNames.Add("OculusXRAnchors");
+			PrivateDependencyModuleNames.Add("OculusXRScene");
+			PrivateDependencyModuleNames.Add("OculusXRPassthrough");
+			
+			string UPLPath = Path.Combine(ModuleDirectory, "QuestMigration_UPL.xml");
+			AdditionalBundleResources.Add(new BundleResource(UPLPath));
+			// Use this for newer UE versions
+			// AdditionalPropertiesForRecipe.Add("AndroidContext", UPLPath);
+		}
 
         PublicDefinitions.Add("WITH_POINTCLOUD");
 

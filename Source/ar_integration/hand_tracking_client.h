@@ -1,7 +1,12 @@
 #pragma once
 
-#include "EngineMinimal.h"
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "UObject/Object.h"
+#include "Containers/CircularQueue.h"
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "grpc_wrapper.h"
 #include "grpc_channel.h"
@@ -12,6 +17,7 @@
 #include "grpc_include_end.h"
 
 #include "HeadMountedDisplayTypes.h"
+#include "UxtXRCompatibility.h"
 
 #include "hand_tracking_client.generated.h"
 

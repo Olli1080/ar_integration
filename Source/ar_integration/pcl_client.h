@@ -4,6 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include <mutex>
+#include <condition_variable>
+#include <memory>
+#include <atomic>
+#include <thread>
 
 #include "grpc_channel.h"
 #include "base_client.h"
@@ -13,7 +18,7 @@
 #include "grpc_include_end.h"
 
 #include "voxel.h"
-#include "camera.h"
+#include "ResearchCamera.h"
 #include "util.h"
 
 #include "pcl_client.generated.h"
@@ -25,7 +30,7 @@ public:
 	virtual ~pcl_transmission() = default;
 	
 	virtual void transmit_data(generated::ICP_Result& response) = 0;
-	virtual bool send_data(const F_point_cloud& pcl) = 0;
+	virtual bool send_data(const FPointCloud& pcl) = 0;
 	virtual grpc::Status end_data() = 0;
 
 protected:
@@ -42,7 +47,7 @@ public:
 	virtual ~pcl_transmission_vertices() override = default;
 
 	virtual void transmit_data(generated::ICP_Result& response) override;
-	virtual bool send_data(const F_point_cloud& pcl) override;
+	virtual bool send_data(const FPointCloud& pcl) override;
 	virtual grpc::Status end_data() override;
 
 private:
@@ -59,7 +64,7 @@ public:
 	virtual ~pcl_transmission_draco() override = default;
 
 	virtual void transmit_data(generated::ICP_Result& response) override;
-	virtual bool send_data(const F_point_cloud& pcl) override;
+	virtual bool send_data(const FPointCloud& pcl) override;
 	virtual grpc::Status end_data() override;
 
 private:
@@ -237,10 +242,10 @@ private:
 	UObject* box_interface_obj;
 
 	/**
-	 * HoloLens 2 depth camera access
+	 * Quest 3 depth camera access
 	 */
 	UPROPERTY()
-	A_camera* cam;
+	AResearchCamera* cam;
 
 	/**
 	 * to be called for every state change that doesn't expect

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Modules/ModuleManager.h"
-#include "camera.h"
+#include "ResearchCamera.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogResearch, Log, All);
 

@@ -1,0 +1,5 @@
+# Requirements for AR Integration Setup
+pathlib
+requests
+urllib3
+# Add any other dependencies here

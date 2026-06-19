@@ -8,7 +8,8 @@ void U_grpc_channel::BeginDestroy()
 	if (thread)
 		thread->join();
 
-	Super::BeginDestroy();
+	static_assert(sizeof(UObject) > 0, "UObject must be complete");
+	UObject::BeginDestroy();
 }
 
 bool U_grpc_channel::construct(FString target, int32 timeout, int32 retries)

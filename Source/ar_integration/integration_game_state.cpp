@@ -1,4 +1,7 @@
 #include "integration_game_state.h"
+#include "QuestRegistrationManager.h"
+#include "QuestManager.h"
+#include "QuestInteractionManager.h"
 //#include "HeadMountedDisplayFunctionLibrary.h"
 
 template<typename ... Ts>
@@ -54,6 +57,10 @@ void A_integration_game_state::BeginPlay()
 
 	franka = GetWorld()->SpawnActor<AFranka>(params);
 	franka_controller_->set_robot(franka);
+
+	QuestRegistrationManager = GetWorld()->SpawnActor<A_QuestRegistrationManager>(params);
+	QuestManager = GetWorld()->SpawnActor<A_QuestManager>(params);
+	QuestInteractionManager = GetWorld()->SpawnActor<A_QuestInteractionManager>(params);
 	
 	franka_voxel->AttachToComponent(correction_component,
 		FAttachmentTransformRules::KeepRelativeTransform);
@@ -84,7 +91,7 @@ void A_integration_game_state::Tick(float DeltaSeconds)
 	
 	std::unique_lock top_lock(anchor_mutex);
 
-#if PLATFORM_HOLOLENS
+#if PLATFORM_ANDROID
 	if (!anchor_pin) return;
 #endif
 	
@@ -178,12 +185,7 @@ void A_integration_game_state::change_channel(FString target, int32 retries)
 	/**
 	 * resync if anchor is set
 	 */
-#if PLATFORM_HOLOLENS
-	if (anchor_pin)
-#endif
-	{
-		sync_and_subscribe();
-	}
+	sync_and_subscribe();
 	
 	on_channel_change.Broadcast(channel);
 }
@@ -276,7 +278,7 @@ void A_integration_game_state::sync_and_subscribe(bool forced)
 		object_client->async_subscribe_delete_objects();
 	}
 
-#if PLATFORM_HOLOLENS
+#if PLATFORM_ANDROID
 	hand_tracking_client->update_local_transform(anchor_pin->GetLocalToWorldTransform().Inverse());
 #endif
 	hand_tracking_client->async_transmit_data();

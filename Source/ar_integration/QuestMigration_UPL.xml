@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<init>
+		<log text="QuestMigration UPL Initialization"/>
+	</init>
+
+	<androidManifestUpdates>
+		<!-- Add permissions for Quest 3 Camera and Scene Access -->
+		<addPermission android:name="android.permission.CAMERA"/>
+		<addPermission android:name="horizonos.permission.HEADSET_CAMERA"/>
+		<addPermission android:name="com.oculus.permission.USE_SCENE"/>
+		<addPermission android:name="com.oculus.permission.USE_ANCHOR_API"/>
+		
+		<!-- Enable Depth API features -->
+		<addFeature android:name="horizonos.feature.HEADSET_CAMERA" android:required="true"/>
+		<addFeature android:name="com.oculus.software.depth_api" android:required="true"/>
+		
+		<!-- Required for Spatial Anchors and Scene Understanding -->
+		<addPermission android:name="com.oculus.permission.IMPORT_EXPORT_IOT_DATA"/>
+	</androidManifestUpdates>
+
+	<gameActivityClassAdditions>
+		<insert>
+			public void AndroidThunkJava_Quest_StartCamera() {
+				android.util.Log.d("QuestCamera", "Starting Quest 3 Camera Stream...");
+				// Logic to initialize Camera2 and ImageReader
+			}
+
+			public void AndroidThunkJava_Quest_StopCamera() {
+				android.util.Log.d("QuestCamera", "Stopping Quest 3 Camera Stream...");
+				// Logic to release Camera2
+			}
+		</insert>
+	</gameActivityClassAdditions>
+</root>

@@ -8,8 +8,9 @@ public class ar_integrationEditorTarget : TargetRules
 	public ar_integrationEditorTarget( TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
-		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_4;
+		DefaultBuildSettings = BuildSettingsVersion.V6;
+		bOverrideBuildEnvironment = true;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 
 		ExtraModuleNames.Add("ar_integration");
         //ExtraModuleNames.Add("Research");

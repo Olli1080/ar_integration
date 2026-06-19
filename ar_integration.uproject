@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{EAECBCFA-4C1A-09DC-DBE7-F8AA291C9CCA}",
+	"EngineAssociation": "5.7",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -19,12 +19,12 @@
 			]
 		},
 		{
-			"Name": "OpenXRMsftHandInteraction",
+			"Name": "OpenXR",
 			"Enabled": true,
 			"SupportedTargetPlatforms": [
 				"Win64",
-				"Android",
-				"HoloLens"
+				"Linux",
+				"Android"
 			]
 		},
 		{
@@ -33,56 +33,40 @@
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Linux",
-				"Android",
-				"HoloLens"
-			]
-		},
-		{
-			"Name": "OpenXREyeTracker",
-			"Enabled": true,
-			"SupportedTargetPlatforms": [
-				"Win64",
-				"Linux",
-				"Android",
-				"HoloLens"
-			]
-		},
-		{
-			"Name": "OpenXR",
-			"Enabled": true,
-			"SupportedTargetPlatforms": [
-				"Win64",
-				"Linux",
-				"Android",
-				"HoloLens"
-			]
-		},
-		{
-			"Name": "UXTools",
-			"Enabled": true,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/f9f9cddaf5834ad1abeda49da34adf85",
-			"SupportedTargetPlatforms": [
-				"Win64",
-				"HoloLens",
 				"Android"
 			]
 		},
 		{
-			"Name": "MicrosoftOpenXR",
+			"Name": "OculusXR",
 			"Enabled": true,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/ef8930ca860148c498b46887da196239",
 			"SupportedTargetPlatforms": [
 				"Win64",
-				"HoloLens"
+				"Android"
 			]
 		},
 		{
 			"Name": "XRBase",
 			"Enabled": true
+		},
+		{
+			"Name": "UXTools",
+			"Enabled": true
+		},
+		{
+			"Name": "OculusInteraction",
+			"Enabled": true
+		},
+		{
+			"Name": "Grpc",
+			"Enabled": true
+		},
+		{
+			"Name": "Research",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
 		"Windows",
-		"HoloLens"
+		"Android"
 	]
 }

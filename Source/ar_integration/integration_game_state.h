@@ -24,6 +24,9 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(F_channel_delegate, U_grpc_channel*, channel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(F_post_actors_delegate);
 
+class A_QuestRegistrationManager;
+class A_QuestManager;
+
 /**
  * @class A_integration_game_state
  * class holding all the global state information
@@ -147,6 +150,15 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	U_franka_shadow_controller* franka_controller_;
+
+	UPROPERTY(BlueprintReadOnly)
+	A_QuestRegistrationManager* QuestRegistrationManager;
+
+	UPROPERTY(BlueprintReadOnly)
+	A_QuestManager* QuestManager;
+
+	UPROPERTY(BlueprintReadOnly)
+	class A_QuestInteractionManager* QuestInteractionManager;
 
 	/**
 	 * thread safe update of anchor

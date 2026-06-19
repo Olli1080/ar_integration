@@ -6,7 +6,7 @@
 #include "Misc/DateTime.h"
 
 #include "grpc_wrapper.h"
-#include "camera.h"
+#include "ResearchCamera.h"
 
 #include "grpc_include_begin.h"
 #include "vertex.pb.h"
@@ -24,10 +24,11 @@
 //#include "Math/UnitConversion.h"
 
 #include "TransformHelper.h"
+#include "UxtXRCompatibility.h"
 
-static_assert(Visual_Change::ENABLED == generated::Visual_Change::ENABLED);
-static_assert(Visual_Change::DISABLED == generated::Visual_Change::DISABLED);
-static_assert(Visual_Change::REVOKED == generated::Visual_Change::REVOKED);
+static_assert(static_cast<int>(Visual_Change::ENABLED) == static_cast<int>(generated::Visual_Change::ENABLED));
+static_assert(static_cast<int>(Visual_Change::DISABLED) == static_cast<int>(generated::Visual_Change::DISABLED));
+static_assert(static_cast<int>(Visual_Change::REVOKED) == static_cast<int>(generated::Visual_Change::REVOKED));
 
 /**
  * This header allows hiding details of generated types
@@ -44,12 +45,12 @@ public:
 
 	TF_Conv_Wrapper() = default;
 	void set_source(const Transformation::TransformationMeta& meta);
-	const Transformation::TransformationConverter& converter() const;
+	const Transformation::TransformationConverterWrapper& converter() const;
 	bool has_converter() const;
 
 private:
 
-	std::unique_ptr<Transformation::TransformationConverter> m_converter;
+	std::unique_ptr<Transformation::TransformationConverterWrapper> m_converter;
 };
 
 /**
@@ -62,7 +63,7 @@ template<typename out, typename in>
 out convert_meta(const in&, TF_Conv_Wrapper& cv);
 
 template<typename out, typename in>
-out convert_meta(const in&, const Transformation::TransformationConverter* cv = nullptr);
+out convert_meta(const in&, const Transformation::TransformationConverterWrapper* cv = nullptr);
 
 generated::Transformation_Meta generate_meta();
 
@@ -80,7 +81,7 @@ TArray<inner_out> convert_array(const google::protobuf::RepeatedPtrField<inner_i
 }
 
 template<typename inner_out, typename inner_in>
-TArray<inner_out> convert_array_meta(const google::protobuf::RepeatedPtrField<inner_in>& in, const Transformation::TransformationConverter* cv = nullptr)
+TArray<inner_out> convert_array_meta(const google::protobuf::RepeatedPtrField<inner_in>& in, const Transformation::TransformationConverterWrapper* cv = nullptr)
 {
 	TArray<inner_out> out;
 	out.Reserve(in.size());
@@ -193,25 +194,25 @@ template<>
 Transformation::TransformationMeta convert(const generated::Transformation_Meta& in);
 
 template<>
-FVector convert_meta(const generated::vertex_3d& in, const Transformation::TransformationConverter* cv);
+FVector convert_meta(const generated::vertex_3d& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
-FVector convert_meta(const generated::vertex_3d_no_scale& in, const Transformation::TransformationConverter* cv);
+FVector convert_meta(const generated::vertex_3d_no_scale& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
-FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverter* cv);
+FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
-FVector convert_meta(const generated::size_3d& in, const Transformation::TransformationConverter* cv);
+FVector convert_meta(const generated::size_3d& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
-FQuat convert_meta(const generated::quaternion& in, const Transformation::TransformationConverter* cv);
+FQuat convert_meta(const generated::quaternion& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 generated::quaternion convert(const FQuat& in);
 
 template<>
-FQuat convert_meta(const generated::Rotation_3d& in, const Transformation::TransformationConverter* cv);
+FQuat convert_meta(const generated::Rotation_3d& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 FColor convert(const generated::color& in);
@@ -226,22 +227,22 @@ template<>
 std::string convert(const FString& in);
 
 template<>
-F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverter* cv);
+F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 F_mesh_data convert_meta(const generated::Mesh_Data_TF_Meta& in, TF_Conv_Wrapper& cv);
 
 template<>
-FBox convert_meta(const generated::aabb& in, const Transformation::TransformationConverter* cv);
+FBox convert_meta(const generated::aabb& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
-F_object_prototype convert_meta(const generated::Object_Prototype& in, const Transformation::TransformationConverter* cv);
+F_object_prototype convert_meta(const generated::Object_Prototype& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 F_object_prototype convert_meta(const generated::Object_Prototype_TF_Meta& in, TF_Conv_Wrapper& cv);
 
 template<>
-F_obb convert_meta(const generated::Obb& in, const Transformation::TransformationConverter* cv);
+F_obb convert_meta(const generated::Obb& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 generated::size_3d convert(const FVector& in);
@@ -260,7 +261,7 @@ template<>
 FMatrix convert(const generated::Matrix& in);
 
 template<>
-FTransform convert_meta(const generated::Matrix& in, const Transformation::TransformationConverter* cv);
+FTransform convert_meta(const generated::Matrix& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 generated::Matrix convert(const FTransform& in);
@@ -269,22 +270,22 @@ template<>
 std::unique_ptr<draco::PointCloud> convert(const TArray<FVector>& in);
 
 template<>
-generated::draco_data convert(const F_point_cloud& pcl);
+generated::draco_data convert(const FPointCloud& pcl);
 */
 template<>
-generated::Pcl_Data convert(const F_point_cloud& pcl);
+generated::Pcl_Data convert(const FPointCloud& pcl);
 
 template<>
-F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverter* cv);
+F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
-F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverter* cv);
+F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverterWrapper* cv);
 
 /*
  * @attend precondition object_instance.has_obj() == true
  */
 template<>
-F_object_instance_data convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv);
+F_object_instance_data convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 F_object_instance_data convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv);
@@ -293,7 +294,7 @@ F_object_instance_data convert_meta(const generated::Object_Instance_TF_Meta& in
  * @attend precondition object_instance.has_box() == true
  */
 template<>
-F_object_instance_colored_box convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv);
+F_object_instance_colored_box convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 F_object_instance_colored_box convert_meta(const generated::Object_Instance_TF_Meta& in, TF_Conv_Wrapper& cv);
@@ -311,13 +312,13 @@ template<>
 generated::Hand_Data convert(const std::pair<FXRMotionControllerData, FDateTime>& in);
 
 template<>
-F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverter* cv);
+F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 F_voxel_data convert_meta(const generated::Voxel_TF_Meta& in, TF_Conv_Wrapper& cv);
 
 template<>
-TArray<FVector> convert_meta(const generated::Tcps& in, const Transformation::TransformationConverter* cv);
+TArray<FVector> convert_meta(const generated::Tcps& in, const Transformation::TransformationConverterWrapper* cv);
 
 template<>
 TArray<FVector> convert_meta(const generated::Tcps_TF_Meta& in, TF_Conv_Wrapper& cv);

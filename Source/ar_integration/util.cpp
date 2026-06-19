@@ -1,4 +1,5 @@
 #include "util.h"
+#include "UxtXRCompatibility.h"
 
 double ToUnixTimestampDecimal()
 {
@@ -10,23 +11,40 @@ generated::Transformation_Meta generate_meta()
 {
 	generated::Transformation_Meta out;
 
+	auto unreal = Transformation::UnrealMeta();
+	
 	auto& right = *out.mutable_right();
-	right.set_axis(generated::Y);
-	right.set_direction(generated::POSITIVE);
+	right.set_axis((generated::Axis)unreal.right().axis);
+	right.set_direction((generated::Axis_Direction)unreal.right().direction);
 
 	auto& forward = *out.mutable_forward();
-	forward.set_axis(generated::X);
-	forward.set_direction(generated::POSITIVE);
+	forward.set_axis((generated::Axis)unreal.forward().axis);
+	forward.set_direction((generated::Axis_Direction)unreal.forward().direction);
 
 	auto& up = *out.mutable_up();
-	up.set_axis(generated::Z);
-	up.set_direction(generated::POSITIVE);
+	up.set_axis((generated::Axis)unreal.up().axis);
+	up.set_direction((generated::Axis_Direction)unreal.up().direction);
 
 	auto& scale = *out.mutable_scale();
-	scale.set_num(1);
-	scale.set_denom(100);
+	scale.set_num(unreal.scale.Num);
+	scale.set_denom(unreal.scale.Denom);
 
 	return out;
+}
+
+void TF_Conv_Wrapper::set_source(const Transformation::TransformationMeta& meta)
+{
+	m_converter = std::make_unique<Transformation::TransformationConverterWrapper>(meta, Transformation::UnrealMeta());
+}
+
+const Transformation::TransformationConverterWrapper& TF_Conv_Wrapper::converter() const
+{
+	return *m_converter;
+}
+
+bool TF_Conv_Wrapper::has_converter() const
+{
+	return m_converter != nullptr;
 }
 
 template<>
@@ -59,7 +77,7 @@ Transformation::TransformationMeta convert(const generated::Transformation_Meta&
 }
 
 template<>
-FVector convert_meta(const generated::vertex_3d& in, const Transformation::TransformationConverter* cv)
+FVector convert_meta(const generated::vertex_3d& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	if (cv == nullptr)
 		return FVector(in.x(), in.y(), in.z());
@@ -68,7 +86,7 @@ FVector convert_meta(const generated::vertex_3d& in, const Transformation::Trans
 }
 
 template<>
-FVector convert_meta(const generated::vertex_3d_no_scale& in, const Transformation::TransformationConverter* cv)
+FVector convert_meta(const generated::vertex_3d_no_scale& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	if (cv == nullptr)
 		return FVector(in.x(), in.y(), in.z());
@@ -77,7 +95,7 @@ FVector convert_meta(const generated::vertex_3d_no_scale& in, const Transformati
 }
 
 template<>
-FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverter* cv)
+FVector convert_meta(const generated::index_3d& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	if (cv == nullptr)
 		return FVector(in.x(), in.y(), in.z());
@@ -86,7 +104,7 @@ FVector convert_meta(const generated::index_3d& in, const Transformation::Transf
 }
 
 template<>
-FVector convert_meta(const generated::size_3d& in, const Transformation::TransformationConverter* cv)
+FVector convert_meta(const generated::size_3d& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	if (cv == nullptr)
 		return FVector(in.x(), in.y(), in.z());
@@ -95,7 +113,7 @@ FVector convert_meta(const generated::size_3d& in, const Transformation::Transfo
 }
 
 template<>
-FQuat convert_meta(const generated::quaternion& in, const Transformation::TransformationConverter* cv)
+FQuat convert_meta(const generated::quaternion& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	if (cv == nullptr)
 		return FQuat(in.x(), in.y(), in.z(), in.w());
@@ -104,7 +122,7 @@ FQuat convert_meta(const generated::quaternion& in, const Transformation::Transf
 }
 
 template<>
-FQuat convert_meta(const generated::Rotation_3d& in, const Transformation::TransformationConverter* cv)
+FQuat convert_meta(const generated::Rotation_3d& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	auto out = FQuat::MakeFromEuler(FVector(
 		FMath::RadiansToDegrees(in.roll()),
@@ -148,7 +166,7 @@ std::string convert(const FString& in)
 }
 
 template<>
-F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverter* cv)
+F_mesh_data convert_meta(const generated::Mesh_Data& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_mesh_data out;
 	out.vertices = convert_array_meta<FVector>(in.vertices(), cv);
@@ -174,7 +192,7 @@ F_mesh_data convert_meta(const generated::Mesh_Data_TF_Meta& in, TF_Conv_Wrapper
 }
 
 template<>
-FBox convert_meta(const generated::aabb& in, const Transformation::TransformationConverter* cv)
+FBox convert_meta(const generated::aabb& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	return FBox::BuildAABB( 
 		convert_meta<FVector>(in.translation(), cv),
@@ -183,7 +201,7 @@ FBox convert_meta(const generated::aabb& in, const Transformation::Transformatio
 }
 
 template<>
-F_object_prototype convert_meta(const generated::Object_Prototype& in, const Transformation::TransformationConverter* cv)
+F_object_prototype convert_meta(const generated::Object_Prototype& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_object_prototype out;
 	out.name = convert<FString>(in.name());
@@ -206,7 +224,7 @@ F_object_prototype convert_meta(const generated::Object_Prototype_TF_Meta& in, T
 }
 
 template<>
-F_obb convert_meta(const generated::Obb& in, const Transformation::TransformationConverter* cv)
+F_obb convert_meta(const generated::Obb& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_obb out;
 	out.axis_box = convert_meta<FBox>(in.axis_aligned(), cv);
@@ -233,7 +251,7 @@ FMatrix convert(const generated::Matrix& in)
 }
 
 template<>
-FTransform convert_meta(const generated::Matrix& in, const Transformation::TransformationConverter* cv)
+FTransform convert_meta(const generated::Matrix& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	if (cv == nullptr)
 	{
@@ -254,7 +272,7 @@ FTransform convert_meta(const generated::Matrix& in, const Transformation::Trans
 }
 
 template<>
-F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverter* cv)
+F_object_data convert_meta(const generated::Object_Data& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_object_data out;
 	out.prototype_name = convert<FString>(in.prototype_name());
@@ -264,7 +282,7 @@ F_object_data convert_meta(const generated::Object_Data& in, const Transformatio
 }
 
 template<>
-F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverter* cv)
+F_colored_box convert_meta(const generated::Colored_Box& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_colored_box out;
 	out.box = convert_meta<F_obb>(in.obbox(), cv);
@@ -285,7 +303,7 @@ F_object_instance_data convert(const generated::Object_Instance& in)
 }*/
 
 template<>
-F_object_instance_data convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
+F_object_instance_data convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_object_instance_data out;
 
@@ -306,7 +324,7 @@ F_object_instance_data convert_meta(const generated::Object_Instance_TF_Meta& in
 }
 
 template<>
-F_object_instance_colored_box convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverter* cv)
+F_object_instance_colored_box convert_meta(const generated::Object_Instance& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_object_instance_colored_box out;
 
@@ -327,7 +345,7 @@ F_object_instance_colored_box convert_meta(const generated::Object_Instance_TF_M
 }
 
 template<>
-F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverter* cv)
+F_voxel_data convert_meta(const generated::Voxels& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	F_voxel_data res;
 	res.voxel_side_length = in.voxel_side_length();
@@ -351,7 +369,7 @@ F_voxel_data convert_meta(const generated::Voxel_TF_Meta& in, TF_Conv_Wrapper& c
 }
 
 template<>
-TArray<FVector> convert_meta(const generated::Tcps& in, const Transformation::TransformationConverter* cv)
+TArray<FVector> convert_meta(const generated::Tcps& in, const Transformation::TransformationConverterWrapper* cv)
 {
 	return convert_array_meta<FVector>(in.points(), cv);
 }
@@ -378,8 +396,8 @@ TOptional<FTransform> convert(const generated::ICP_Result& in)
 		return convert_meta<FTransform>(data.matrix(), nullptr);
 
 	using namespace Transformation;
-	TransformationConverter converter(
-		convert<TransformationMeta>(data.transformation_meta()), UnrealMeta
+	TransformationConverterWrapper converter(
+		convert<TransformationMeta>(data.transformation_meta()), UnrealMeta()
 	);
 	return convert_meta<FTransform>(data.matrix(), &converter);
 }
@@ -496,57 +514,14 @@ generated::Matrix convert(const FTransform& in)
 	return out;
 }
 
-/*
 template<>
-std::unique_ptr<draco::PointCloud> convert(const TArray<FVector>& in)
-{
-	TSet<size_t> not_nan;
-	for (size_t i = 0; i < in.Num(); ++i)
-	{
-		if (!in[i].ContainsNaN())
-			not_nan.Add(i);
-	}
-
-	draco::PointCloudBuilder builder;
-	builder.Start(not_nan.Num());
-
-	const int att_id = builder.AddAttribute(draco::GeometryAttribute::POSITION, 3, draco::DataType::DT_FLOAT32);
-	const auto data = convert_std_array<std::array<float, 3>, true>(in);
-
-	for (const auto& idx : not_nan)
-		builder.SetAttributeValueForPoint(att_id, draco::PointIndex(idx), data.data() + 3 * idx);
-
-	return builder.Finalize(false);
-}
-
-template<>
-generated::draco_data convert(const F_point_cloud& pcl)
-{
-	generated::draco_data request;
-
-	const auto draco_cloud = convert<std::unique_ptr<draco::PointCloud>>(pcl.data);
-
-	draco::EncoderBuffer buffer;
-	draco::PointCloudKdTreeEncoder encoder;
-	draco::EncoderOptions options = draco::EncoderOptions::CreateDefaultOptions();
-	options.SetSpeed(4, 1);
-	encoder.SetPointCloud(*draco_cloud);
-	encoder.Encode(options, &buffer);
-
-	request.set_data(buffer.data(), buffer.size());
-	request.set_timestamp(pcl.abs_timestamp);
-
-	return request;
-}*/
-
-template<>
-generated::Pcl_Data convert(const F_point_cloud& pcl)
+generated::Pcl_Data convert(const FPointCloud& pcl)
 {
 	generated::Pcl_Data request;
 	request.mutable_vertices()->CopyFrom(
-		convert_array<generated::vertex_3d, true>(pcl.data));
+		convert_array<generated::vertex_3d, true>(pcl.Data));
 
-	request.set_timestamp(pcl.abs_timestamp);
+	request.set_timestamp(pcl.AbsTimestamp);
 
 	return request;
 }
@@ -656,20 +631,4 @@ Voxel_Data convert_meta(const generated::Voxel_Transmission& in, TF_Conv_Wrapper
 		out.Emplace<Visual_Change>(static_cast<Visual_Change>(in.state_update()));
 
 	return out;
-}
-
-
-void TF_Conv_Wrapper::set_source(const Transformation::TransformationMeta& meta)
-{
-	m_converter = std::make_unique<Transformation::TransformationConverter>(meta, Transformation::UnrealMeta);
-}
-
-const Transformation::TransformationConverter& TF_Conv_Wrapper::converter() const
-{
-	return *m_converter;
-}
-
-bool TF_Conv_Wrapper::has_converter() const
-{
-	return !!m_converter;
 }

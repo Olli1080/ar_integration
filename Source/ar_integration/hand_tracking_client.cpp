@@ -23,12 +23,12 @@ void A_hand_tracking_client::Tick(float DeltaSeconds)
 		return;
 	
 	FXRMotionControllerData data;
-	UHeadMountedDisplayFunctionLibrary::GetMotionControllerData(GetWorld(), EControllerHand::Left, data);
+	UxtGetMotionControllerData(GetWorld(), EControllerHand::Left, data);
 	pre_process(data);
 	hand_queue.Enqueue(convert<generated::Hand_Data>(std::make_pair(data, current_time)));
 	cv.notify_one();
 	
-	UHeadMountedDisplayFunctionLibrary::GetMotionControllerData(GetWorld(), EControllerHand::Right, data);
+	UxtGetMotionControllerData(GetWorld(), EControllerHand::Right, data);
 	pre_process(data);
 	hand_queue.Enqueue(convert<generated::Hand_Data>(std::make_pair(data, current_time)));
 	cv.notify_one();

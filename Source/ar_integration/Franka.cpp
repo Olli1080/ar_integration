@@ -20,7 +20,7 @@ static inline Transformation::TransformationMeta DHMeta(
 	{ Transformation::Axis::Z, Transformation::AxisDirection::POSITIVE }
 );
 
-static inline Transformation::TransformationConverter dh_2_UE{ DHMeta, Transformation::UnrealMeta };
+static inline Transformation::TransformationConverterWrapper dh_2_UE{ DHMeta, Transformation::UnrealMeta() };
 
 static inline float PI_2 = UE_PI / 2.f;
 

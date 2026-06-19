@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "pcl_client.h"
+#include <stdexcept>
 
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -22,7 +23,7 @@ void pcl_transmission_vertices::transmit_data(generated::ICP_Result& response)
 	stream->WaitForInitialMetadata();
 }
 
-bool pcl_transmission_vertices::send_data(const F_point_cloud& pcl)
+bool pcl_transmission_vertices::send_data(const FPointCloud& pcl)
 {
 	generated::Pcl_Data_Meta to_send;
 	*to_send.mutable_pcl_data() = convert<generated::Pcl_Data>(pcl);
@@ -54,7 +55,7 @@ void pcl_transmission_draco::transmit_data(generated::ICP_Result& response)
 	stream->WaitForInitialMetadata();
 }
 
-bool pcl_transmission_draco::send_data(const F_point_cloud& pcl)
+bool pcl_transmission_draco::send_data(const FPointCloud& pcl)
 {
 	return stream->Write(convert<generated::draco_data>(pcl));
 }
@@ -105,7 +106,7 @@ void A_pcl_client::stop_Implementation()
 
 FTransform A_pcl_client::get_table_to_world() const
 {
-	if (!cam || !cam->pin)
+	if (!cam)
 		return {};
 	
 	return table_to_point_cloud;
@@ -154,7 +155,7 @@ grpc::Status A_pcl_client::send_point_clouds()
 	if (interface_present)
 		obb = I_box_interface::Execute_get_box(box_interface_obj);
 
-	const auto extrinsic_inv = cam->get_camera_view_matrix().Inverse();
+	const auto extrinsic_inv = cam->GetCameraViewMatrix().Inverse();
 
 	/**
 	 * initialize stream
@@ -166,7 +167,7 @@ grpc::Status A_pcl_client::send_point_clouds()
 		/**
 		 * pull point cloud from cam and yield if empty
 		 */
-		auto pcl = cam->get_pcl();
+		auto pcl = cam->GetPcl();
 		if (!pcl.IsSet())
 		{
 			std::this_thread::yield();
@@ -183,7 +184,7 @@ grpc::Status A_pcl_client::send_point_clouds()
 		 */
 		FTransform::Multiply(&world_trafo, &extrinsic_inv, &location);
 
-		for (auto& p : point_cloud.data)
+		for (auto& p : point_cloud.Data)
 		{
 			p = world_trafo.TransformPosition(p);
 			
@@ -197,10 +198,10 @@ grpc::Status A_pcl_client::send_point_clouds()
 		{
 			size_t last_valid_idx = 0;
 			size_t valid_points = 0;
-			//size_t last_invalid_idx = point_cloud.data.Num() - 1;
-			for (size_t i = point_cloud.data.Num() - 1; (i + 1) > 0; --i)
+			//size_t last_invalid_idx = point_cloud.Data.Num() - 1;
+			for (size_t i = point_cloud.Data.Num() - 1; (i + 1) > 0; --i)
 			{
-				if (point_cloud.data[i].ContainsNaN())
+				if (point_cloud.Data[i].ContainsNaN())
 					continue;
 
 				last_valid_idx = i;
@@ -211,32 +212,32 @@ grpc::Status A_pcl_client::send_point_clouds()
 			//we can skip every nan before the last valid index
 			for (size_t i = last_valid_idx; (i + 1) > 0; --i)
 			{
-				if (!point_cloud.data[i].ContainsNaN())
+				if (!point_cloud.Data[i].ContainsNaN())
 					continue;
 
 				--valid_points;
-				point_cloud.data.Swap(last_valid_idx, i);
+				point_cloud.Data.Swap(last_valid_idx, i);
 
 				for (size_t j = i - 1; i > 0 && (j + 1) > 0; --j)
 				{
-					if (point_cloud.data[j].ContainsNaN())
+					if (point_cloud.Data[j].ContainsNaN())
 						continue;
 
 					last_valid_idx = i;
 					break;
 				}
 			}
-			point_cloud.data.SetNum(valid_points);
+			point_cloud.Data.SetNum(valid_points);
 		}
 
 		/**
 		 * return if there are no points left after filtering
 		 */
-		if (point_cloud.data.IsEmpty())
+		if (point_cloud.Data.IsEmpty())
 			continue;
 
 		if (voxel)
-			voxel->insert(point_cloud.data);
+			voxel->insert(point_cloud.Data);
 
 		/**
 		 * transmit point clouds while stream is active
@@ -318,7 +319,7 @@ void A_pcl_client::toggle(bool active)
 			set_state(state::STOP);
 			return;
 		default:
-			throw std::exception("Invalid enum value");
+			throw std::runtime_error("Invalid enum value");
 		}	
 	}
 	
@@ -357,7 +358,7 @@ void A_pcl_client::toggle(bool active)
 		break;
 	}
 	default:
-		throw std::exception("Invalid enum value");
+		throw std::runtime_error("Invalid enum value");
 	}
 
 	state expected = state::START;
@@ -389,7 +390,7 @@ void A_pcl_client::toggle(bool active)
 	 * set state to running and clear depth image buffer
 	 */
 	set_state(state::RUNNING);
-	cam->clear_queue();
+	cam->ClearQueue();
 
 	/**
 	 * send obb and open multiple channels for transmission of point clouds
@@ -430,6 +431,8 @@ void A_pcl_client::toggle_async(bool active)
 	std::thread(&A_pcl_client::toggle, this, active).detach();
 }
 
+
+
 // Called every frame
 void A_pcl_client::Tick(float DeltaTime)
 {
@@ -440,7 +443,7 @@ void A_pcl_client::Tick(float DeltaTime)
 	//params.bNoFail = true;
 
 	if (current_state != state::INIT) return;
-	
+
 	if (UARBlueprintLibrary::GetARSessionStatus().Status ==
 		EARSessionStatus::Running && channel)
 	{
@@ -448,10 +451,10 @@ void A_pcl_client::Tick(float DeltaTime)
 
 		FActorSpawnParameters params;
 		params.bNoFail = true;
-		
-		cam = GetWorld()->SpawnActor<A_camera>(params);
-		cam->init(threading::MULTIPLE_CONSUMERS);
-		
+
+		cam = GetWorld()->SpawnActor<AResearchCamera>(params);
+		cam->InitCamera(EThreadingMode::MultipleConsumers);
+
 		cv.notify_all();
 	}
 #endif

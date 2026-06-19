@@ -24,14 +24,19 @@
 3. Clone Repository: `git clone https://github.com/Olli1080/UnrealEngine.git -b revert_to_14-38` (you may wanna use `--single-branch` to avoid overhead)
 4. Follow the Instructions in the readme or use the Unreal Engine builder `https://github.com/Olli1080/Unreal-Binary-Builder.git`
 
-# Getting Started
-1. Clone Repository: `git clone https://github.com/Olli1080/ar_integration.git -b revert_to_14-38` .
-2. Clone Sub-Repositories `git submodule update --init --recursive`.
-3. Run in the checked-out repository: `python setup_dependencies.py`.
-4. Install Epic Games Launcher: https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi
-5. Right click on `ar_integration.uproject` and select Generate Visual Studio project files (requires Unreal Engine with support for HoloLens). 
-6. Open the generated ar_integration.sln with Visual Studio 2022.
-7. Right click on `ar_integration` in the solution explorer and select "Build". If you encounter build errors, examine the vcpkg logs and fix the ports. Use, for instance overlay ports as done in `Plugins\grpc_plugin\Source\overlay`
+# Getting Started (Quest 3 / HoloLens)
+1. **Clone Repository:** `git clone https://github.com/Olli1080/ar_integration.git --recursive`
+2. **Launch Unreal Engine:** **IMPORTANT:** You MUST launch your Unreal Engine installation (e.g., UE 5.7) at least once before proceeding. This ensures the engine is correctly registered in your system.
+3. **Run Setup:** Double-click **`setup.bat`**. This will:
+    - Create a Python virtual environment.
+    - Automatically find your Android NDK.
+    - Download Meta XR and OpenCV plugins.
+    - Register the Unreal Version Selector (requires UAC approval).
+    - Automatically generate the Visual Studio project files.
+6. **Deploy to Quest 3:**
+    - Open the project in Unreal Editor.
+    - Go to **Platforms > Android > Package Project**.
+    - For details, see [SETUP.md](SETUP.md).
 8. Connect the HoloLens to the same network as the host and note the IP addresses of both devices (will be needed in later steps)
 9. Open `ar_integration.uproject` in Unreal Engine.
     1. Edit -> Project Settings -> [On the left of the dialog window] HoloLens under Platforms -> Signing Certificate under Packaging -> Click Generate. Under Toolchain select the installed Windows 10 SDK Version.

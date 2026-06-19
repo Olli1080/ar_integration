@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include <thread>
 
 #include "grpc_include_begin.h"
 #include <memory>

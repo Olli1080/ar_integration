@@ -7,10 +7,16 @@
  * THIS HEADER HAS TO BE INCLUDED AFTER THE LAST GENERATED HEADER
  */
 
-#if (defined(PLATFORM_HOLOLENS) | defined(PLATFORM_WINDOWS))
+#if (defined(PLATFORM_HOLOLENS) && PLATFORM_HOLOLENS) || (defined(PLATFORM_WINDOWS) && PLATFORM_WINDOWS)
 #pragma warning(pop)
-THIRD_PARTY_INCLUDES_END
 #include "Windows/HideWindowsPlatformAtomics.h"
+#endif
+
+THIRD_PARTY_INCLUDES_END
+
+// Restore verify macro
+#ifndef verify
+#define verify(expr) UE_CHECK_IMPL(expr)
 #endif
 
 #undef GRPC_INCLUDE_BEGIN

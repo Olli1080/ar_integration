@@ -74,3 +74,7 @@ Plugins/*/Intermediate/*
 # Custom Filters
 Plugins/vc-ue-extensions/**
 Source/ar_integration/Generated/**
+
+Plugins/OculusXR/
+Plugins/OculusInteraction/
+venv

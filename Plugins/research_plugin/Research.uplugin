@@ -15,14 +15,14 @@
 	"Installed": false,
 	"SupportedTargetPlatforms": [
 		"Win64",
-		"HoloLens"
+		"Android"
 	],
 	"Modules": [
 		{
 			"Name": "Research",
 			"Type": "Runtime",
 			"LoadingPhase": "PreDefault",
-			"WhitelistPlatforms": [ "Win64", "HoloLens" ]
+			"PlatformAllowList": [ "Win64", "Android" ]
 		}
 	],
 	"Plugins": [
@@ -31,7 +31,7 @@
 			"Enabled": true
 		},
 		{
-			"Name": "MicrosoftOpenXR",
+			"Name": "OculusXR",
 			"Enabled": true
 		}
 	]

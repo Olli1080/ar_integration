@@ -8,20 +8,27 @@
  * THIS HEADER HAS TO BE INCLUDED PRIOR TO THE GENERATED HEADERS
  */
 
-#if (defined(PLATFORM_HOLOLENS) | defined(PLATFORM_WINDOWS))
+#if (defined(PLATFORM_HOLOLENS) && PLATFORM_HOLOLENS) || (defined(PLATFORM_WINDOWS) && PLATFORM_WINDOWS)
 #include "Windows/WindowsHWrapper.h"
 #include "Windows/AllowWindowsPlatformAtomics.h"
 #include <winnt.h>
-
-#undef verify
 
 #ifndef MEMORY_BARRIER
 #define MEMORY_BARRIER
 static void MemoryBarrier() {}
 #endif
+#endif
+
+// Undefine conflicting macros (like Unreal's verify macro)
+#ifdef verify
+#undef verify
+#endif
 
 THIRD_PARTY_INCLUDES_START
+
+#if (defined(PLATFORM_HOLOLENS) && PLATFORM_HOLOLENS) || (defined(PLATFORM_WINDOWS) && PLATFORM_WINDOWS)
 #pragma warning(push)
 #pragma warning (disable : 4800 4125 4647 4668 4582 4583 4946 4996)
 #endif
+
 #endif
