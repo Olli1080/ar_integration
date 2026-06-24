@@ -2,16 +2,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "integration_game_state.h"
+#include "IntegrationGameState.h"
 #include "QuestRegistrationManager.generated.h"
 
 UCLASS()
-class AR_INTEGRATION_API A_QuestRegistrationManager : public AActor
+class AR_INTEGRATION_API AQuestRegistrationManager : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	A_QuestRegistrationManager();
+	AQuestRegistrationManager();
 
 protected:
 	virtual void BeginPlay() override;

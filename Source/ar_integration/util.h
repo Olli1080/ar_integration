@@ -5,10 +5,10 @@
 #include "HeadMountedDisplayTypes.h"
 #include "Misc/DateTime.h"
 
-#include "grpc_wrapper.h"
+#include "GrpcWrapper.h"
 #include "ResearchCamera.h"
 
-#include "grpc_include_begin.h"
+#include "GrpcIncludeBegin.h"
 #include "vertex.pb.h"
 #include "object_prototype.pb.h"
 #include "depth_image.pb.h"
@@ -16,7 +16,7 @@
 #include "hand_tracking.pb.h"
 #include "robot.pb.h"
 #include "meta_data.pb.h"
-#include "grpc_include_end.h"
+#include "GrpcIncludeEnd.h"
 
 //#include <draco/point_cloud/point_cloud_builder.h>
 //#include <draco/compression/point_cloud/point_cloud_kd_tree_encoder.h>
@@ -249,10 +249,6 @@ generated::size_3d convert(const FVector& in);
 
 template<>
 generated::vertex_3d convert(const FVector& in);
-
-//TODO:: is this in use?
-template<>
-std::array<float, 3> convert(const FVector& in);
 
 template<>
 generated::Matrix convert(const FMatrix& in);

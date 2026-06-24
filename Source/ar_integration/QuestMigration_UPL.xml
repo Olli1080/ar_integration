@@ -21,14 +21,151 @@
 
 	<gameActivityClassAdditions>
 		<insert>
+			private android.hardware.camera2.CameraDevice questCameraDevice = null;
+			private android.hardware.camera2.CameraCaptureSession questCaptureSession = null;
+			private android.media.ImageReader questImageReader = null;
+			private final Object questFrameLock = new Object();
+			private byte[] questLatestFrameData = null;
+			private int questFrameWidth = 0;
+			private int questFrameHeight = 0;
+
 			public void AndroidThunkJava_Quest_StartCamera() {
 				android.util.Log.d("QuestCamera", "Starting Quest 3 Camera Stream...");
-				// Logic to initialize Camera2 and ImageReader
+				synchronized(questFrameLock) {
+					if (questCameraDevice != null) return;
+				}
+				try {
+					android.hardware.camera2.CameraManager manager = (android.hardware.camera2.CameraManager) getSystemService(android.content.Context.CAMERA_SERVICE);
+					String[] cameraIds = manager.getCameraIdList();
+					if (cameraIds.length == 0) {
+						android.util.Log.e("QuestCamera", "No cameras found");
+						return;
+					}
+					String targetCameraId = cameraIds[0];
+					manager.openCamera(targetCameraId, new android.hardware.camera2.CameraDevice.StateCallback() {
+						@Override
+						public void onOpened(android.hardware.camera2.CameraDevice camera) {
+							synchronized(questFrameLock) {
+								questCameraDevice = camera;
+							}
+							createCameraPreviewSession();
+						}
+						@Override
+						public void onDisconnected(android.hardware.camera2.CameraDevice camera) {
+							synchronized(questFrameLock) {
+								if (questCameraDevice == camera) {
+									questCameraDevice.close();
+									questCameraDevice = null;
+								}
+							}
+						}
+						@Override
+						public void onError(android.hardware.camera2.CameraDevice camera, int error) {
+							synchronized(questFrameLock) {
+								if (questCameraDevice == camera) {
+									questCameraDevice.close();
+									questCameraDevice = null;
+								}
+							}
+							android.util.Log.e("QuestCamera", "Camera error: " + error);
+						}
+					}, null);
+				} catch (Exception e) {
+					android.util.Log.e("QuestCamera", "Failed to start camera", e);
+				}
+			}
+
+			private void createCameraPreviewSession() {
+				try {
+					synchronized(questFrameLock) {
+						if (questCameraDevice == null) return;
+						questImageReader = android.media.ImageReader.newInstance(640, 480, android.graphics.ImageFormat.YUV_420_888, 2);
+						questImageReader.setOnImageAvailableListener(new android.media.ImageReader.OnImageAvailableListener() {
+							@Override
+							public void onImageAvailable(android.media.ImageReader reader) {
+								android.media.Image img = reader.acquireLatestImage();
+								if (img == null) return;
+								try {
+									android.media.Image.Plane[] planes = img.getPlanes();
+									if (planes.length > 0) {
+										java.nio.ByteBuffer buffer = planes[0].getBuffer();
+										int remaining = buffer.remaining();
+										synchronized(questFrameLock) {
+											if (questLatestFrameData == null || questLatestFrameData.length != remaining) {
+												questLatestFrameData = new byte[remaining];
+											}
+											buffer.get(questLatestFrameData);
+											questFrameWidth = img.getWidth();
+											questFrameHeight = img.getHeight();
+										}
+									}
+								} catch (Exception e) {
+									android.util.Log.e("QuestCamera", "Error reading image data", e);
+								} finally {
+									img.close();
+								}
+							}
+						}, null);
+
+						final android.view.Surface surface = questImageReader.getSurface();
+						final android.hardware.camera2.CaptureRequest.Builder builder = questCameraDevice.createCaptureRequest(android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW);
+						builder.addTarget(surface);
+
+						questCameraDevice.createCaptureSession(java.util.Arrays.asList(surface), new android.hardware.camera2.CameraCaptureSession.StateCallback() {
+							@Override
+							public void onConfigured(android.hardware.camera2.CameraCaptureSession session) {
+								synchronized(questFrameLock) {
+									if (questCameraDevice == null) return;
+									questCaptureSession = session;
+								}
+								try {
+									builder.set(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE, android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+									session.setRepeatingRequest(builder.build(), null, null);
+								} catch (Exception e) {
+									android.util.Log.e("QuestCamera", "Failed to start repeating request", e);
+								}
+							}
+							@Override
+							public void onConfigureFailed(android.hardware.camera2.CameraCaptureSession session) {
+								android.util.Log.e("QuestCamera", "Failed to configure camera session");
+							}
+						}, null);
+					}
+				} catch (Exception e) {
+					android.util.Log.e("QuestCamera", "Failed to create preview session", e);
+				}
 			}
 
 			public void AndroidThunkJava_Quest_StopCamera() {
 				android.util.Log.d("QuestCamera", "Stopping Quest 3 Camera Stream...");
-				// Logic to release Camera2
+				synchronized(questFrameLock) {
+					if (questCaptureSession != null) {
+						questCaptureSession.close();
+						questCaptureSession = null;
+					}
+					if (questCameraDevice != null) {
+						questCameraDevice.close();
+						questCameraDevice = null;
+					}
+					if (questImageReader != null) {
+						questImageReader.close();
+						questImageReader = null;
+					}
+					questLatestFrameData = null;
+				}
+			}
+
+			public boolean AndroidThunkJava_Quest_GetFrame(byte[] outBuffer, int[] outDims) {
+				synchronized(questFrameLock) {
+					if (questLatestFrameData == null) {
+						return false;
+					}
+					int size = Math.min(outBuffer.length, questLatestFrameData.length);
+					System.arraycopy(questLatestFrameData, 0, outBuffer, 0, size);
+					outDims[0] = questFrameWidth;
+					outDims[1] = questFrameHeight;
+					return true;
+				}
 			}
 		</insert>
 	</gameActivityClassAdditions>

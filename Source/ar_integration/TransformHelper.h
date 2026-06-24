@@ -8,7 +8,7 @@
 #include "Math/Vector.h"
 #include "Math/TransformVectorized.h"
 
-#include "grpc_include_begin.h"
+#include "GrpcIncludeBegin.h"
 #include "vertex.pb.h"
 #include "object_prototype.pb.h"
 #include "depth_image.pb.h"

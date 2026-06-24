@@ -182,10 +182,17 @@ public class Grpc : ModuleRules
 
         PublicIncludePaths.Add(TargetPaths.include);
         PublicIncludePaths.Add(Path.Combine(TargetPaths.include, "opencv4"));
+        PublicSystemLibraryPaths.Add(Path.Combine(TargetPaths.tripletInstalled, "lib"));
 
         string generatedDir = Path.Combine(mProjectPath, "Source", "ar_integration", "Generated");
         PublicIncludePaths.Add(generatedDir);
 
+        // Add libraries twice to resolve cyclic dependencies (e.g. within abseil or protobuf)
+        foreach (string Lib in Ressources.libs)
+        {
+            string LibFilePath = Path.Combine(TargetPaths.tripletInstalled, Lib);
+            PublicAdditionalLibraries.Add(LibFilePath);
+        }
         foreach (string Lib in Ressources.libs)
         {
             string LibFilePath = Path.Combine(TargetPaths.tripletInstalled, Lib);

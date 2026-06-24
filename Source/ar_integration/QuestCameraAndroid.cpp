@@ -42,10 +42,32 @@ void QuestCameraAndroid::StopStream()
 
 bool QuestCameraAndroid::GetLatestFrame(TArray<uint8>& OutFrameData, int32& OutWidth, int32& OutHeight)
 {
-	// 1. Lock a shared buffer with the Java-side ImageReader
-	// 2. Memcpy the pixel data into OutFrameData
-	// 3. Update dimensions
-	return false; 
+	JNIEnv* Env = FAndroidApplication::GetJavaEnv();
+	if (!Env) return false;
+
+	static jmethodID Method = FJavaWrapper::FindMethod(Env, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_Quest_GetFrame", "([B[I)Z", false);
+	if (!Method) return false;
+
+	jbyteArray jOutBuffer = Env->NewByteArray(640 * 480);
+	jintArray jOutDims = Env->NewIntArray(2);
+
+	jboolean bResult = Env->CallBooleanMethod(FJavaWrapper::GameActivityThis, Method, jOutBuffer, jOutDims);
+	if (bResult)
+	{
+		jint dims[2];
+		Env->GetIntArrayRegion(jOutDims, 0, 2, dims);
+		OutWidth = dims[0];
+		OutHeight = dims[1];
+
+		int32 Size = OutWidth * OutHeight;
+		OutFrameData.SetNumUninitialized(Size);
+		Env->GetByteArrayRegion(jOutBuffer, 0, Size, (jbyte*)OutFrameData.GetData());
+	}
+
+	Env->DeleteLocalRef(jOutBuffer);
+	Env->DeleteLocalRef(jOutDims);
+
+	return bResult;
 }
 
 #else

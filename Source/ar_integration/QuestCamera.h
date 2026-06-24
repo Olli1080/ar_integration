@@ -5,12 +5,12 @@
 #include "QuestCamera.generated.h"
 
 UCLASS()
-class AR_INTEGRATION_API A_QuestCamera : public AActor
+class AR_INTEGRATION_API AQuestCamera : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	A_QuestCamera();
+	AQuestCamera();
 
 protected:
 	virtual void BeginPlay() override;

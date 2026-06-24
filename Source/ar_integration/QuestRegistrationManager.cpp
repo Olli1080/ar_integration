@@ -1,19 +1,19 @@
 #include "QuestRegistrationManager.h"
-#include "integration_game_state.h"
+#include "IntegrationGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TransformHelper.h"
 
-A_QuestRegistrationManager::A_QuestRegistrationManager()
+AQuestRegistrationManager::AQuestRegistrationManager()
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-void A_QuestRegistrationManager::BeginPlay()
+void AQuestRegistrationManager::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void A_QuestRegistrationManager::Tick(float DeltaTime)
+void AQuestRegistrationManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -23,12 +23,12 @@ void A_QuestRegistrationManager::Tick(float DeltaTime)
 	}
 }
 
-void A_QuestRegistrationManager::StartDetection()
+void AQuestRegistrationManager::StartDetection()
 {
 	bIsDetecting = true;
 }
 
-void A_QuestRegistrationManager::StopDetection()
+void AQuestRegistrationManager::StopDetection()
 {
 	bIsDetecting = false;
 }
@@ -53,7 +53,7 @@ void A_QuestRegistrationManager::StopDetection()
 #pragma pop_macro("int64")
 #pragma pop_macro("check")
 
-void A_QuestRegistrationManager::ProcessCameraFrame()
+void AQuestRegistrationManager::ProcessCameraFrame()
 {
 	TArray<uint8> FrameData;
 	int32 Width, Height;
@@ -104,7 +104,7 @@ void A_QuestRegistrationManager::ProcessCameraFrame()
 	}
 }
 
-FTransform A_QuestRegistrationManager::OpenCVToUnreal(const FVector& RotationVector, const FVector& TranslationVector)
+FTransform AQuestRegistrationManager::OpenCVToUnreal(const FVector& RotationVector, const FVector& TranslationVector)
 {
 	using namespace Transformation;
 	
@@ -130,9 +130,9 @@ FTransform A_QuestRegistrationManager::OpenCVToUnreal(const FVector& RotationVec
 	return FTransform(UnrealQuat, UnrealTranslation);
 }
 
-void A_QuestRegistrationManager::UpdateWorldAnchor(const FTransform& MarkerTransform)
+void AQuestRegistrationManager::UpdateWorldAnchor(const FTransform& MarkerTransform)
 {
-	auto* GameState = Cast<A_integration_game_state>(UGameplayStatics::GetGameState(GetWorld()));
+	auto* GameState = Cast<AIntegrationGameState>(UGameplayStatics::GetGameState(GetWorld()));
 	if (GameState)
 	{
 		GameState->update_anchor_transform(MarkerTransform);

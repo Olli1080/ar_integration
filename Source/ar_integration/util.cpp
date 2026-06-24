@@ -428,20 +428,6 @@ F_joints_synced convert(const generated::Sync_Joints& in)
 }
 
 template<>
-std::array<float, 3> convert(const FVector& in)
-{
-	std::array<float, 3> out;
-	out[0] = in.X;
-	out[1] = in.Y;
-	out[2] = in.Z;
-
-	return out;
-}
-
-
-
-
-template<>
 generated::quaternion convert(const FQuat& in)
 {
 	FQuat temp = in;

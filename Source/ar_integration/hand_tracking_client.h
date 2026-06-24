@@ -4,17 +4,17 @@
 #include "GameFramework/Actor.h"
 #include "UObject/Object.h"
 #include "Containers/CircularQueue.h"
-#include <thread>
+#include "StreamThread.h"
 #include <mutex>
 #include <condition_variable>
 
-#include "grpc_wrapper.h"
-#include "grpc_channel.h"
-#include "base_client.h"
+#include "GrpcWrapper.h"
+#include "GrpcChannel.h"
+#include "BaseClient.h"
 
-#include "grpc_include_begin.h"
+#include "GrpcIncludeBegin.h"
 #include "hand_tracking.grpc.pb.h"
-#include "grpc_include_end.h"
+#include "GrpcIncludeEnd.h"
 
 #include "HeadMountedDisplayTypes.h"
 #include "UxtXRCompatibility.h"
@@ -31,7 +31,7 @@ enum class hand_client_status : uint8
 };
 
 UCLASS(Blueprintable)
-class A_hand_tracking_client : public AActor, public I_Base_Client_Interface
+class A_hand_tracking_client : public AActor, public IBaseClientInterface
 {
 	GENERATED_BODY()
 public:
@@ -70,7 +70,7 @@ private:
 	std::mutex mtx;
 	std::condition_variable cv;
 	
-	std::unique_ptr<std::thread> thread;
+	std::unique_ptr<FStreamThread> thread;
 	std::unique_ptr<generated::hand_tracking_com::Stub> stub;
 
 	BASE_CLIENT_BODY(

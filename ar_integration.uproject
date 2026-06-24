@@ -50,7 +50,11 @@
 		},
 		{
 			"Name": "UXTools",
-			"Enabled": true
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Android"
+			]
 		},
 		{
 			"Name": "OculusInteraction",

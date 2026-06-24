@@ -1,0 +1,461 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "PclClient.h"
+#include <stdexcept>
+
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
+
+#include "Math/TransformVectorized.h"
+#include "ARBlueprintLibrary.h"
+
+#include "util.h"
+
+pcl_transmission_vertices::pcl_transmission_vertices(std::unique_ptr<generated::pcl_com::Stub>& stub)
+	: stub(stub)
+{
+	context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+}
+
+void pcl_transmission_vertices::transmit_data(generated::ICP_Result& response)
+{
+	stream = stub->transmit_pcl_data(&context, &response);
+	stream->WaitForInitialMetadata();
+}
+
+bool pcl_transmission_vertices::send_data(const FPointCloud& pcl)
+{
+	generated::Pcl_Data_Meta to_send;
+	*to_send.mutable_pcl_data() = convert<generated::Pcl_Data>(pcl);
+
+	if (first)
+		*to_send.mutable_transformation_meta() = generate_meta();
+	first = false;
+
+	return stream->Write(to_send);
+}
+
+grpc::Status pcl_transmission_vertices::end_data()
+{
+	stream->WritesDone();
+	return stream->Finish();
+}
+
+
+/*
+pcl_transmission_draco::pcl_transmission_draco(std::unique_ptr<generated::pcl_com::Stub>& stub)
+	: stub(stub)
+{
+	context.set_compression_algorithm(GRPC_COMPRESS_NONE);
+}
+
+void pcl_transmission_draco::transmit_data(generated::ICP_Result& response)
+{
+	stream = stub->transmit_draco_data(&context, &response);
+	stream->WaitForInitialMetadata();
+}
+
+bool pcl_transmission_draco::send_data(const FPointCloud& pcl)
+{
+	return stream->Write(convert<generated::draco_data>(pcl));
+}
+
+grpc::Status pcl_transmission_draco::end_data()
+{
+	stream->WritesDone();
+	return stream->Finish();
+}
+*/
+
+
+APclClient::APclClient()
+{
+#ifdef WITH_POINTCLOUD
+	PrimaryActorTick.bCanEverTick = true;
+#else
+	PrimaryActorTick.bCanEverTick = false;
+#endif
+}
+
+// Called when the game starts or when spawned
+void APclClient::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void APclClient::BeginDestroy()
+{
+	{
+		std::unique_lock lock(order_mutex);
+
+		if (current_state == state::RUNNING ||
+			current_state == state::STOP ||
+			current_state == state::START)
+		{
+			current_state = state::STOP;
+			cv.wait(lock);
+		}
+	}
+	Super::BeginDestroy();
+}
+
+void APclClient::stop_Implementation()
+{	
+	toggle(false);
+}
+
+FTransform APclClient::get_table_to_world() const
+{
+	if (!cam)
+		return {};
+	
+	return table_to_point_cloud;
+}
+
+void APclClient::set_box_interface_obj(UObject* obj)
+{
+	if (!IsValid(obj))
+		box_interface_obj = nullptr;
+
+	/**
+	 * check if object really implements box_interface
+	 */
+	if (UKismetSystemLibrary::DoesImplementInterface(
+		obj, U_box_interface::StaticClass()))
+		box_interface_obj = obj;		
+}
+
+void APclClient::state_change_sync(state old_state, state new_state) const
+{
+	FFunctionGraphTask::CreateAndDispatchWhenReady([this, old_state, new_state]()
+		{
+			on_state_change.Broadcast(old_state, new_state);
+		},
+		TStatId{}, nullptr, ENamedThreads::GameThread);
+}
+
+void APclClient::set_state(state new_state)
+{
+	if (const auto old_state = current_state.exchange(new_state); old_state != new_state)
+		state_change_sync(old_state, new_state);
+}
+
+grpc::Status APclClient::send_point_clouds()
+{
+	/**
+	 * generate context data for transmission
+	 * and set compression algorithm
+	 */
+	generated::ICP_Result response;
+
+	const bool interface_present = box_interface_obj &&
+		I_box_interface::Execute_has_box(box_interface_obj);
+
+	F_obb obb;
+	if (interface_present)
+		obb = I_box_interface::Execute_get_box(box_interface_obj);
+
+	const auto extrinsic_inv = cam->GetCameraViewMatrix().Inverse();
+
+	/**
+	 * initialize stream
+	 */
+	auto stream = pcl_transmission_vertices{ stub };
+	stream.transmit_data(response);
+	while (current_state == state::RUNNING)
+	{
+		/**
+		 * pull point cloud from cam and yield if empty
+		 */
+		auto pcl = cam->GetPcl();
+		if (!pcl.IsSet())
+		{
+			std::this_thread::yield();
+			continue;
+		}
+
+		auto& [location, point_cloud] = pcl.GetValue();
+
+		FTransform world_trafo;
+		/**
+		 * transform to convert point from HoloLens camera to global space
+		 * extrinsic_inv is position of sensor relative to rig
+		 * location is position of rig relative to world
+		 */
+		FTransform::Multiply(&world_trafo, &extrinsic_inv, &location);
+
+		for (auto& p : point_cloud.Data)
+		{
+			p = world_trafo.TransformPosition(p);
+			
+			if (interface_present)
+			{
+				if (!UKismetMathLibrary::IsPointInBoxWithTransform(p, FTransform(obb.rotation, obb.axis_box.GetCenter()), obb.axis_box.GetExtent()))
+					p.Set(NAN, NAN, NAN);
+			}
+		}
+		if (interface_present)
+		{
+			size_t last_valid_idx = 0;
+			size_t valid_points = 0;
+			//size_t last_invalid_idx = point_cloud.Data.Num() - 1;
+			for (size_t i = point_cloud.Data.Num() - 1; (i + 1) > 0; --i)
+			{
+				if (point_cloud.Data[i].ContainsNaN())
+					continue;
+
+				last_valid_idx = i;
+				valid_points = i + 1;
+				break;
+			}
+
+			//we can skip every nan before the last valid index
+			for (size_t i = last_valid_idx; (i + 1) > 0; --i)
+			{
+				if (!point_cloud.Data[i].ContainsNaN())
+					continue;
+
+				--valid_points;
+				point_cloud.Data.Swap(last_valid_idx, i);
+
+				for (size_t j = i - 1; i > 0 && (j + 1) > 0; --j)
+				{
+					if (point_cloud.Data[j].ContainsNaN())
+						continue;
+
+					last_valid_idx = i;
+					break;
+				}
+			}
+			point_cloud.Data.SetNum(valid_points);
+		}
+
+		/**
+		 * return if there are no points left after filtering
+		 */
+		if (point_cloud.Data.IsEmpty())
+			continue;
+
+		if (voxel)
+			voxel->insert(point_cloud.Data);
+
+		/**
+		 * transmit point clouds while stream is active
+		 * set state to stop if stream closes
+		 */
+		if (!stream.send_data(point_cloud))
+		{
+			set_state(state::STOP);
+			break;
+		}
+	}
+	auto status = stream.end_data();
+
+	/**
+	 * evaluate if point cloud correspondence with server is valid
+	 * and transform it and set table_to_point_cloud
+	 */
+	if (status.ok())
+	{
+		if (const auto result = convert<TOptional<FTransform>>(response); result.IsSet())
+			table_to_point_cloud = result.GetValue();
+	}
+	return status;
+}
+
+bool APclClient::filter_point(FVector& p) const
+{
+	const bool interface_present = box_interface_obj &&
+		I_box_interface::Execute_has_box(box_interface_obj);
+
+	if (!interface_present)
+		return false;
+	
+	/**
+	 * Filter points from point cloud
+	 * by setting them to NAN
+	 */
+	if (!I_box_interface::Execute_is_point_in_region(
+		box_interface_obj, p))
+	{
+		p.Set(NAN, NAN, NAN);
+		return true;
+	}
+	return false;
+}
+
+grpc::Status APclClient::send_obb() const
+{
+	if (box_interface_obj &&
+		I_box_interface::Execute_has_box(box_interface_obj))
+	{
+		const F_obb obb = I_box_interface::Execute_get_box(box_interface_obj);
+
+		grpc::ClientContext ctx;
+
+		generated::Obb_Meta to_send;
+		*to_send.mutable_obb() = convert<generated::Obb>(obb);
+		*to_send.mutable_transformation_meta() = generate_meta();
+
+		google::protobuf::Empty empty;
+		stub->transmit_obb(&ctx, to_send, &empty);
+	}
+	return grpc::Status::OK;
+}
+
+void APclClient::toggle(bool active)
+{
+	if (!active)
+	{
+		switch (current_state)
+		{
+		case state::INIT:
+			cv.notify_all(); [[fallthrough]];
+		case state::READY: [[fallthrough]];
+		case state::STOP:
+			return;
+		case state::START: [[fallthrough]];
+		case state::RUNNING:
+			set_state(state::STOP);
+			return;
+		default:
+			throw std::runtime_error("Invalid enum value");
+		}	
+	}
+	
+	switch (current_state)
+	{
+	case state::INIT:
+	{
+		std::unique_lock lock(order_mutex);
+		if (set) return;
+		set = true;
+
+		if (current_state == state::INIT)
+			cv.wait(lock);
+
+		set = false;
+		if (current_state == state::INIT)
+			return;
+		[[fallthrough]];
+	}
+	case state::READY:
+		set_state(state::START);
+		break;
+	case state::START: [[fallthrough]];
+	case state::RUNNING:
+		return;
+	case state::STOP:
+	{
+		std::unique_lock lock(order_mutex);
+		if (set) return;
+		set = true;
+
+		if (current_state == state::STOP)
+			cv.wait(lock);
+
+		set = false;
+		break;
+	}
+	default:
+		throw std::runtime_error("Invalid enum value");
+	}
+
+	state expected = state::START;
+	const bool was_expected = current_state.compare_exchange_strong(
+		expected, state::RUNNING);
+
+	if (expected != state::RUNNING)
+		state_change_sync(expected, state::RUNNING);
+	
+	if (!was_expected) return;
+
+	/**
+	 * creates voxel filter and size if visualize is true
+	 */
+	if (visualize)
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
+			{
+				FActorSpawnParameters params;
+				params.bNoFail = true;
+
+				voxel = GetWorld()->SpawnActor<AVoxel>(params);
+				voxel->set_voxel_size(box_interface_obj &&
+					I_box_interface::Execute_has_box(box_interface_obj) ? 3.f : 10.f);
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread)->Wait();
+	}
+	/**
+	 * set state to running and clear depth image buffer
+	 */
+	set_state(state::RUNNING);
+	cam->ClearQueue();
+
+	/**
+	 * send obb and open multiple channels for transmission of point clouds
+	 */
+	{
+		std::unique_lock lock(channel_mutex);
+		std::ignore = send_obb();
+		std::list<std::thread> threads;
+		for (size_t i = 0; i < 3; ++i)
+			threads.emplace_back(std::thread(&APclClient::send_point_clouds, this));
+		for (auto& thread : threads)
+			thread.join();
+	}
+	/**
+	 * Restore ready state
+	 * wake any waiting state changes
+	 */
+	if (voxel)
+	{
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
+			{
+				voxel->Destroy();
+			},
+			TStatId{}, nullptr, ENamedThreads::GameThread)->Wait();
+	}
+	
+	set_state(state::READY);
+	cv.notify_all();
+}
+
+state APclClient::get_state() const
+{
+	return current_state;
+}
+
+void APclClient::toggle_async(bool active)
+{
+	std::thread(&APclClient::toggle, this, active).detach();
+}
+
+
+
+// Called every frame
+void APclClient::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+#ifdef WITH_POINTCLOUD
+	//FActorSpawnParameters params;
+	//params.bNoFail = true;
+
+	if (current_state != state::INIT) return;
+
+	if (UARBlueprintLibrary::GetARSessionStatus().Status ==
+		EARSessionStatus::Running && channel)
+	{
+		set_state(state::READY);
+
+		FActorSpawnParameters params;
+		params.bNoFail = true;
+
+		cam = GetWorld()->SpawnActor<AResearchCamera>(params);
+		cam->InitCamera(EThreadingMode::MultipleConsumers);
+
+		cv.notify_all();
+	}
+#endif
+}

@@ -40,7 +40,7 @@ void A_hand_tracking_client::BeginDestroy()
 	if (thread)
 	{
 		cv.notify_all();
-		thread->join();
+		thread = nullptr;
 	}	
 	Super::BeginDestroy();
 }
@@ -54,13 +54,13 @@ void A_hand_tracking_client::async_transmit_data()
 		return;
 
 	if (thread)
-		thread->join();
+		thread = nullptr;
 	
-	thread = std::make_unique<std::thread>([this]() 
+	thread = std::make_unique<FStreamThread>(
+		[this](grpc::ClientContext& ctx) 
 		{
 			if (!channel) return;
 
-			grpc::ClientContext ctx;
 			ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 			
 			google::protobuf::Empty empty;
@@ -92,7 +92,8 @@ void A_hand_tracking_client::async_transmit_data()
 
 			hand_client_status expected = hand_client_status::STOP;
 			status.compare_exchange_strong(expected, hand_client_status::READY);
-		});
+		},
+		TEXT("gRPC_HandTrackingStream"));
 }
 
 bool A_hand_tracking_client::async_stop()
@@ -117,7 +118,6 @@ void A_hand_tracking_client::stop_Implementation()
 	const bool stop = async_stop();
 	if (stop)
 	{
-		thread->join();
 		thread = nullptr;
 	}
 	hand_queue.Empty();

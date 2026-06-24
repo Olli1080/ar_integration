@@ -78,3 +78,4 @@ Source/ar_integration/Generated/**
 Plugins/OculusXR/
 Plugins/OculusInteraction/
 venv
+Android_OpenXR/

@@ -436,7 +436,6 @@ double FFrankaJoints::getValue(int idx) const
 		return theta_6;
 	}
 	return 0;
-	//TODO::
 }
 
 F_DHParameter::F_DHParameter(double d, double theta, double a, double alpha, DHConvention convention)

@@ -15,6 +15,7 @@ vcpkg_root = plugin_dir / "Source" / "vcpkg"
 vcpkg_exe = vcpkg_root / "vcpkg.exe"
 bootstrap_bat = vcpkg_root / "bootstrap-vcpkg.bat"
 overlay_dir = plugin_dir / "Source" / "overlay"
+overlay_triplets_dir = plugin_dir / "Source" / "overlay-triplets"
 
 def find_ndk_path(project_root_path):
     """
@@ -75,44 +76,52 @@ def bootstrap_vcpkg():
         print("vcpkg is already bootstrapped.")
 
 def setup_triplet(triplet_name):
+    overlay_triplets_dir.mkdir(parents=True, exist_ok=True)
+    target_triplet_file = overlay_triplets_dir / f"{triplet_name}.cmake"
+    
     triplet_paths = [
         vcpkg_root / "triplets" / f"{triplet_name}.cmake",
         vcpkg_root / "triplets" / "community" / f"{triplet_name}.cmake"
     ]
     
-    triplet_file = None
+    source_triplet_file = None
     for path in triplet_paths:
         if path.exists():
-            triplet_file = path
+            source_triplet_file = path
             break
             
-    if not triplet_file:
-        # If not found, default to creating it in triplets directory
-        triplet_file = vcpkg_root / "triplets" / f"{triplet_name}.cmake"
-        print(f"Creating new triplet file: {triplet_file}")
-        with open(triplet_file, "w") as f:
-            f.write(f"set(VCPKG_TARGET_ARCHITECTURE arm64)\n")
-            f.write(f"set(VCPKG_CRT_LINKAGE dynamic)\n")
-            f.write(f"set(VCPKG_LIBRARY_LINKAGE static)\n")
-            if "android" in triplet_name:
-                f.write(f"set(VCPKG_CMAKE_SYSTEM_NAME Android)\n")
-                f.write(f"set(VCPKG_CMAKE_SYSTEM_VERSION 28)\n")
-                f.write(f"set(VCPKG_MAKE_BUILD_TRIPLET \"--host=aarch64-linux-android\")\n")
-                f.write(f"set(VCPKG_CMAKE_CONFIGURE_OPTIONS -DANDROID_ABI=arm64-v8a)\n")
-    
-    print(f"Configuring triplet: {triplet_file}")
-    with open(triplet_file, "r") as f:
-        lines = f.readlines()
-        
+    if source_triplet_file:
+        with open(source_triplet_file, "r") as f:
+            lines = f.readlines()
+    else:
+        # Default fallback
+        lines = [
+            "set(VCPKG_TARGET_ARCHITECTURE arm64)\n",
+            "set(VCPKG_CRT_LINKAGE dynamic)\n",
+            "set(VCPKG_LIBRARY_LINKAGE static)\n"
+        ]
+        if "android" in triplet_name:
+            lines.extend([
+                "set(VCPKG_CMAKE_SYSTEM_NAME Android)\n",
+                "set(VCPKG_CMAKE_SYSTEM_VERSION 30)\n",
+                "set(VCPKG_MAKE_BUILD_TRIPLET \"--host=aarch64-linux-android\")\n",
+                "set(VCPKG_CMAKE_CONFIGURE_OPTIONS \"-DANDROID_ABI=arm64-v8a\")\n",
+                "set(VCPKG_CXX_FLAGS \"-fno-emulated-tls\")\n",
+                "set(VCPKG_C_FLAGS \"-fno-emulated-tls\")\n"
+            ])
+            
     toolset_version = "14.44"  # Default toolset configuration
     
-    # Filter out existing VCPKG_BUILD_TYPE and VCPKG_PLATFORM_TOOLSET_VERSION
-    new_lines = [l for l in lines if "VCPKG_BUILD_TYPE" not in l and "VCPKG_PLATFORM_TOOLSET_VERSION" not in l]
-    new_lines.append("\nset(VCPKG_BUILD_TYPE release)\n")
-    if "windows" in triplet_name:
-        new_lines.append(f"set(VCPKG_PLATFORM_TOOLSET_VERSION \"{toolset_version}\")\n")
+    # Filter out existing VCPKG_BUILD_TYPE, VCPKG_PLATFORM_TOOLSET_VERSION, and VCPKG_POLICY_SKIP_ALL_POST_BUILD_CHECKS
+    new_lines = [l for l in lines if "VCPKG_BUILD_TYPE" not in l and "VCPKG_PLATFORM_TOOLSET_VERSION" not in l and "VCPKG_POLICY_SKIP_ALL_POST_BUILD_CHECKS" not in l]
     
-    with open(triplet_file, "w") as f:
+    new_lines.append("set(VCPKG_POLICY_SKIP_ALL_POST_BUILD_CHECKS enabled)\n")
+    if "windows" in triplet_name:
+        new_lines.append("\nset(VCPKG_BUILD_TYPE release)\n")
+        new_lines.append(f"set(VCPKG_PLATFORM_TOOLSET_VERSION \"{toolset_version}\")\n")
+        
+    print(f"Writing overlay triplet: {target_triplet_file}")
+    with open(target_triplet_file, "w") as f:
         f.writelines(new_lines)
 
 def install_dependencies():
@@ -130,7 +139,9 @@ def install_dependencies():
         str(vcpkg_exe),
         "install",
         "--recurse",
+        "--no-binarycaching",
         f"--overlay-ports={overlay_dir}",
+        f"--overlay-triplets={overlay_triplets_dir}",
         f"--host-triplet={host_triplet}",
         f"--vcpkg-root={vcpkg_root}",
         "vcpkg-cmake"
@@ -146,7 +157,9 @@ def install_dependencies():
             str(vcpkg_exe),
             "install",
             "--recurse",
+            "--no-binarycaching",
             f"--overlay-ports={overlay_dir}",
+            f"--overlay-triplets={overlay_triplets_dir}",
             f"--host-triplet={host_triplet}",
             f"--vcpkg-root={vcpkg_root}"
         ]
@@ -200,8 +213,8 @@ def generate_protobufs():
         with open(cc_file_path, "r") as f:
             lines = f.readlines()
             
-        lines.insert(0, '#include "grpc_include_begin.h"\n')
-        lines.append('#include "grpc_include_end.h"\n')
+        lines.insert(0, '#include "GrpcIncludeBegin.h"\n')
+        lines.append('#include "GrpcIncludeEnd.h"\n')
         
         with open(cc_file_path, "w") as f:
             f.writelines(lines)

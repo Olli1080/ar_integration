@@ -13,12 +13,12 @@ enum class EQuestPassthroughStyle : uint8
 };
 
 UCLASS()
-class AR_INTEGRATION_API A_QuestManager : public AActor
+class AR_INTEGRATION_API AQuestManager : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	A_QuestManager();
+	AQuestManager();
 
 protected:
 	virtual void BeginPlay() override;

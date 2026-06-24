@@ -1,16 +1,16 @@
 #include "QuestCamera.h"
 
-A_QuestCamera::A_QuestCamera()
+AQuestCamera::AQuestCamera()
 {
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void A_QuestCamera::BeginPlay()
+void AQuestCamera::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void A_QuestCamera::GetSyntheticPCL(TArray<FVector>& OutPoints)
+void AQuestCamera::GetSyntheticPCL(TArray<FVector>& OutPoints)
 {
 #if PLATFORM_ANDROID
 	SampleDepthAPI(OutPoints);
@@ -40,7 +40,7 @@ void A_QuestCamera::GetSyntheticPCL(TArray<FVector>& OutPoints)
 #endif
 }
 
-void A_QuestCamera::SampleDepthAPI(TArray<FVector>& OutPoints)
+void AQuestCamera::SampleDepthAPI(TArray<FVector>& OutPoints)
 {
 	// Meta XR Depth API integration:
 	// 1. Get the Depth Texture from the Meta XR Plugin (OVRService)
@@ -51,7 +51,7 @@ void A_QuestCamera::SampleDepthAPI(TArray<FVector>& OutPoints)
 	// OutPoints.Add(...) // Thousands of points per frame
 }
 
-void A_QuestCamera::EnableRawCameraAccess(bool bEnabled)
+void AQuestCamera::EnableRawCameraAccess(bool bEnabled)
 {
 	// Implemented in QuestCameraAndroid
 }

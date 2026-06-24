@@ -5,17 +5,17 @@
 #include "QuestInteractionManager.generated.h"
 
 /**
- * @class A_QuestInteractionManager
+ * @class AQuestInteractionManager
  * Replaces UXTools interaction logic with Meta XR ISDK.
  * Manages Poke, Ray, and Grab interactors.
  */
 UCLASS()
-class AR_INTEGRATION_API A_QuestInteractionManager : public AActor
+class AR_INTEGRATION_API AQuestInteractionManager : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	A_QuestInteractionManager();
+	AQuestInteractionManager();
 
 protected:
 	virtual void BeginPlay() override;

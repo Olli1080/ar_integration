@@ -1,11 +1,11 @@
 #include "QuestManager.h"
 
-A_QuestManager::A_QuestManager()
+AQuestManager::AQuestManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void A_QuestManager::BeginPlay()
+void AQuestManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
@@ -16,31 +16,31 @@ void A_QuestManager::BeginPlay()
 	SetPassthroughEnabled(true);
 }
 
-void A_QuestManager::Tick(float DeltaTime)
+void AQuestManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
 
-void A_QuestManager::SetPassthroughEnabled(bool bEnabled)
+void AQuestManager::SetPassthroughEnabled(bool bEnabled)
 {
 	bPassthroughEnabled = bEnabled;
 	UpdateQuestSettings();
 }
 
-void A_QuestManager::SetPassthroughStyle(EQuestPassthroughStyle Style)
+void AQuestManager::SetPassthroughStyle(EQuestPassthroughStyle Style)
 {
 	CurrentStyle = Style;
 	UpdateQuestSettings();
 }
 
-void A_QuestManager::SetPerformanceLevel(int32 CPULevel, int32 GPULevel)
+void AQuestManager::SetPerformanceLevel(int32 CPULevel, int32 GPULevel)
 {
 	// In a real Meta build, this would call OVRPlugin::SetSystemDisplayFrequency
 	// or similar Meta XR specific functions via JNI or the MetaXR plugin.
 	// For now, we provide the interface for Blueprints.
 }
 
-void A_QuestManager::UpdateQuestSettings()
+void AQuestManager::UpdateQuestSettings()
 {
 	// To be implemented with Meta XR Plugin:
 	// 1. Passthrough:

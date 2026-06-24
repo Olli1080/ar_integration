@@ -5,7 +5,7 @@
 #include "Interaction/IsdkPokeInteractor.h"
 #include "Interaction/IsdkRayInteractor.h"
 
-A_QuestInteractionManager::A_QuestInteractionManager()
+AQuestInteractionManager::AQuestInteractionManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -28,13 +28,13 @@ A_QuestInteractionManager::A_QuestInteractionManager()
 	RightRayInteractor->SetupAttachment(RightHandAnchor);
 }
 
-void A_QuestInteractionManager::BeginPlay()
+void AQuestInteractionManager::BeginPlay()
 {
 	Super::BeginPlay();
 	SetupInteractions();
 }
 
-void A_QuestInteractionManager::SetupInteractions()
+void AQuestInteractionManager::SetupInteractions()
 {
 	// Configure Poke distance for UI
 	// if (LeftPokeInteractor) LeftPokeInteractor->SetPokeRange(5.0f);
@@ -44,13 +44,13 @@ void A_QuestInteractionManager::SetupInteractions()
 	SwitchInputMode(true);
 }
 
-void A_QuestInteractionManager::SetRayInteractionEnabled(bool bEnabled)
+void AQuestInteractionManager::SetRayInteractionEnabled(bool bEnabled)
 {
 	if (LeftRayInteractor) LeftRayInteractor->SetActive(bEnabled);
 	if (RightRayInteractor) RightRayInteractor->SetActive(bEnabled);
 }
 
-void A_QuestInteractionManager::SwitchInputMode(bool bUseHands)
+void AQuestInteractionManager::SwitchInputMode(bool bUseHands)
 {
 	bIsUsingHands = bUseHands;
 	// In Meta ISDK, Interactors are usually driven by a Data Source.
